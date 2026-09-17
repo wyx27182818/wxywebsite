@@ -1,0 +1,12 @@
+# 本地环境配置（以后存数据库密码等敏感信息），绝不上传
+.env
+
+# 依赖目录（以后装了 Node 依赖会生成）
+node_modules/
+
+# WorkBuddy 的工作数据，不属于网站文件
+.workbuddy/
+
+# 系统垃圾文件
+.DS_Store
+Thumbs.db
