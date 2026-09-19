@@ -1,39 +1,1488 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Joye 的个人网站</title>
-  <style>
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: "Microsoft YaHei", sans-serif;
-      background: #1a1a2e;
-      color: #e0e0e0;
-    }
-    main { text-align: center; padding: 2rem; }
-    h1 { font-size: 2rem; margin-bottom: 0.5rem; }
-    p { color: #9a9ab0; }
-    .badge {
-      display: inline-block;
-      margin-top: 1.5rem;
-      padding: 0.4rem 1rem;
-      border: 1px solid #4a4a6a;
-      border-radius: 999px;
-      font-size: 0.85rem;
-      color: #b0b0c8;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>艺账 · 自己的账自己说了算</title>
+<style>
+  :root{
+    --bg:#f5f7fa;
+    --bg-top:#fbfdff;
+    --card:#ffffff;
+    --ink:#1e293b;
+    --ink-2:#7d8aa3;
+    --line:#e3e9f2;
+    --line-soft:#eef2f8;
+    --accent:#2563eb;
+    --accent-deep:#1e40af;
+    --accent-soft:#e8f0fe;
+    --save-grad-a:#3b82f6;
+    --glow-strong:rgba(37,99,235,.22);
+    --glow-soft:rgba(37,99,235,.12);
+    --on-accent:#ffffff;
+    --danger:#b91c1c;
+    --ok:#15803d;
+    --input-bg:#f8fafc;
+    --ph:#b6c2d4;
+    --row-hover:#f6f9fd;
+    --pick-border:#cbd8ea;
+    --hint:#94a3b8;
+    --del:#cbd5e1;
+    --footer:#9aa8bd;
+    --shadow:0 1px 2px rgba(30,60,120,.05),0 4px 14px rgba(30,60,120,.06);
+  }
+  /* ---- 三主题：白蓝款（默认）/ 黑白款 / 春天版 ----
+     所有颜色都走变量，换主题 = 换一组变量值，布局一点不动 */
+  html[data-theme="dark"]{
+    --bg:#131416; --bg-top:#1a1b1e;
+    --card:#1d1f22;
+    --ink:#f3f4f5; --ink-2:#b3b8bf;
+    --line:#3d4046; --line-soft:#2b2e33;
+    --accent:#fafafa; --accent-deep:#ffffff; --accent-soft:#282b30;
+    --save-grad-a:#d6d6d6;
+    --glow-strong:rgba(255,255,255,.2); --glow-soft:rgba(255,255,255,.1);
+    --on-accent:#141414;
+    --danger:#ef8f8f; --ok:#8ccfa0;
+    --input-bg:#26282c; --ph:#8b9099;
+    --row-hover:#25272b; --pick-border:#4c5057;
+    --hint:#a2a7af; --del:#6e737b; --footer:#8b9099;
+    --shadow:0 1px 2px rgba(0,0,0,.35),0 4px 16px rgba(0,0,0,.4);
+  }
+  html[data-theme="spring"]{
+    --bg:#edf3ea; --bg-top:#f4f8f0;
+    --card:#fdfffc;
+    --ink:#233123; --ink-2:#77876f;
+    --line:#d9e4d3; --line-soft:#e7efe2;
+    --accent:#3f7d4e; --accent-deep:#2f6340; --accent-soft:#e6f1e3;
+    --save-grad-a:#57975f;
+    --glow-strong:rgba(63,125,78,.24); --glow-soft:rgba(63,125,78,.12);
+    --on-accent:#ffffff;
+    --danger:#bb4d44; --ok:#2e7d4f;
+    --input-bg:#f5f9f2; --ph:#aebfa6;
+    --row-hover:#f3f8ef; --pick-border:#c4d6bd;
+    --hint:#8ca084; --del:#bcccb6; --footer:#93a48c;
+    --shadow:0 1px 2px rgba(45,80,40,.05),0 4px 14px rgba(45,80,40,.07);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    line-height:1.55;
+    padding:28px 18px 90px;
+    -webkit-font-smoothing:antialiased;
+    transition:background-color .45s ease,color .45s ease;
+  }
+  /* 页面顶部那层淡淡的颜色晕染（原来写死的渐变改成变量，
+     这样换主题时也能跟着平滑变色） */
+  body::before{
+    content:"";position:fixed;left:0;right:0;top:0;height:340px;z-index:-1;
+    background:var(--bg-top);pointer-events:none;
+    -webkit-mask-image:linear-gradient(180deg,#000,transparent);
+    mask-image:linear-gradient(180deg,#000,transparent);
+    transition:background-color .45s ease;
+  }
+  .wrap{max-width:680px;margin:0 auto}
+  header{display:flex;align-items:baseline;gap:12px;margin-bottom:24px;flex-wrap:wrap}
+  header h1{font-size:30px;letter-spacing:3px;font-weight:800}
+  header h1::after{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;
+    background:var(--accent);margin-left:8px;vertical-align:6px}
+  header .sub{color:var(--ink-2);font-size:12.5px}
+  .card{
+    background:var(--card);
+    border:1px solid var(--line-soft);
+    border-radius:18px;
+    padding:22px;
+    margin-bottom:16px;
+    box-shadow:var(--shadow);
+  }
+  /* ---- 时间段与总额 ---- */
+  .quick{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+  .quick button{
+    border:1px solid transparent;background:var(--line-soft);border-radius:999px;
+    padding:6px 16px;font-size:13px;color:var(--ink-2);cursor:pointer;
+    transition:background .15s,color .15s,box-shadow .15s;
+  }
+  .quick button:hover{color:var(--ink)}
+  .quick button.on{background:var(--accent);color:var(--on-accent);box-shadow:0 2px 8px var(--glow-strong)}
+  .range-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--ink-2);font-size:13px;margin-bottom:14px}
+  .range-row input[type=date]{
+    border:1px solid var(--line);border-radius:10px;padding:5px 10px;font-size:13px;color:var(--ink);
+    background:var(--input-bg);transition:border-color .15s;
+  }
+  .range-row input[type=date]:focus{outline:none;border-color:var(--accent)}
+  .total-num{
+    font-size:46px;font-weight:800;letter-spacing:.5px;line-height:1.15;
+    font-variant-numeric:tabular-nums;color:var(--ink);
+  }
+  .total-num .rmb{font-size:20px;color:var(--accent);margin-right:6px;font-weight:700}
+  .total-meta{color:var(--ink-2);font-size:13px;margin-top:2px}
+  .export-btn{
+    margin-top:14px;margin-right:8px;border:1px solid var(--line);background:var(--card);color:var(--accent-deep);
+    border-radius:10px;padding:8px 15px;font-size:13px;cursor:pointer;font-weight:600;
+    transition:border-color .15s,background .15s,transform .1s;
+  }
+  .export-btn:hover{background:var(--accent-soft);border-color:var(--accent)}
+  .export-btn:active{transform:translateY(1px)}
+  .export-btn:disabled{opacity:.4;cursor:not-allowed}
+  .folder-row{display:flex;align-items:center;gap:10px;margin-top:6px;flex-wrap:wrap;font-size:12px;color:var(--ink-2)}
+  .folder-row .export-btn{margin-top:6px;padding:5px 12px;font-size:12px;font-weight:500;color:var(--ink-2)}
+  .folder-row .export-btn:hover{color:var(--accent-deep)}
+  .folder-row #folderInfo{max-width:100%}
+  /* ---- 录入表单 ---- */
+  .card h2{font-size:15px;margin-bottom:14px;color:var(--ink);font-weight:700}
+  .card h2::before{content:"";display:inline-block;width:4px;height:14px;border-radius:2px;
+    background:var(--accent);margin-right:8px;vertical-align:-2px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(min-width:560px){.grid{grid-template-columns:2fr 1fr 2fr 1fr}}
+  .field{display:flex;flex-direction:column;gap:5px}
+  .field label{font-size:12px;color:var(--ink-2)}
+  .field input{
+    border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px;
+    background:var(--input-bg);color:var(--ink);width:100%;transition:border-color .15s,box-shadow .15s;
+  }
+  .field input::placeholder{color:var(--ph)}
+  .field input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--glow-soft)}
+  .shot-row{display:flex;align-items:center;gap:12px;margin:14px 0 4px;flex-wrap:wrap}
+  .shot-row .pick{
+    border:1.5px dashed var(--pick-border);border-radius:12px;padding:9px 16px;font-size:13px;
+    color:var(--ink-2);cursor:pointer;background:var(--input-bg);transition:color .15s,border-color .15s,background .15s;
+  }
+  .shot-row .pick:hover{color:var(--accent);border-color:var(--accent)}
+  .shot-row .pick.has{border-style:solid;color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
+  .shot-row input[type=file]{display:none}
+  .thumb-mini{height:48px;border-radius:10px;border:1px solid var(--line);display:block}
+  .shot-row .clear-shot{border:none;background:none;color:var(--ink-2);cursor:pointer;font-size:12px;text-decoration:underline}
+  .shot-row .clear-shot:hover{color:var(--danger)}
+  .save-btn{
+    margin-top:14px;width:100%;border:none;border-radius:12px;
+    background:linear-gradient(135deg,var(--save-grad-a),var(--accent));
+    color:var(--on-accent);font-size:15px;padding:13px;cursor:pointer;font-weight:700;letter-spacing:3px;
+    box-shadow:0 3px 10px var(--glow-strong);transition:filter .15s,transform .1s;
+  }
+  .save-btn:hover{filter:brightness(1.06)}
+  .save-btn:active{transform:translateY(1px)}
+  .save-btn.done{background:var(--ok);box-shadow:0 3px 10px rgba(21,128,61,.25)}
+  .hint{font-size:12px;color:var(--hint);margin-top:10px;line-height:1.7}
+  /* ---- 列表 ---- */
+  .group{margin-bottom:14px;padding:14px 16px}
+  .group-head{
+    display:flex;align-items:center;gap:10px;
+    padding:10px 12px;border-radius:12px;background:var(--accent-soft);margin-bottom:4px;
+  }
+  .group-head .cat{font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px}
+  .group-head .cat::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent);flex:none}
+  .group-head .cat-name{cursor:pointer}
+  .group-head .cat-name:hover{text-decoration:underline dotted}
+  .group-head .meta{color:var(--ink-2);font-size:12px;margin-left:auto;font-variant-numeric:tabular-nums}
+  /* 树形分类：折叠箭头 + 子级缩进 */
+  .gcaret{
+    border:none;background:none;color:var(--ink-2);cursor:pointer;flex:none;
+    width:16px;font-size:10px;line-height:1;padding:0;font-family:inherit;
+    transition:color .12s;
+  }
+  .gcaret:hover{color:var(--accent)}
+  .gcaret.none{cursor:default;width:6px}
+  .group .kid{margin-left:20px}
+  .row{
+    display:flex;align-items:center;gap:10px;
+    padding:10px 12px;border-bottom:1px solid var(--line-soft);
+    border-radius:8px;transition:background .12s;
+  }
+  .row:hover{background:var(--row-hover)}
+  .row:last-child{border-bottom:none}
+  .row .name{font-size:14px;cursor:pointer}
+  .row .name:hover{text-decoration:underline dotted}
+  .row .date{font-size:12px;color:var(--ink-2)}
+  .row .amt{margin-left:auto;font-weight:700;font-size:14px;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .row .thumb{height:42px;width:42px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:zoom-in;background:var(--input-bg)}
+  .row .del{
+    border:none;background:none;color:var(--del);cursor:pointer;font-size:15px;line-height:1;padding:2px 5px;
+    transition:color .12s;
+  }
+  .row .del:hover{color:var(--danger)}
+  .empty{color:var(--ink-2);text-align:center;padding:34px 0;font-size:14px}
+  .empty b{color:var(--accent)}
+  /* ---- 原地编辑（不用弹窗） ---- */
+  .inline-edit{
+    border:1px solid var(--accent);border-radius:8px;padding:4px 9px;font-size:14px;
+    background:var(--card);color:var(--ink);width:170px;max-width:55vw;
+    box-shadow:0 0 0 3px var(--glow-soft);
+  }
+  .row .mv{
+    border:1px solid var(--line);background:var(--input-bg);border-radius:999px;
+    font-size:11px;color:var(--ink-2);cursor:pointer;padding:2px 10px;white-space:nowrap;
+    transition:color .12s,border-color .12s;
+  }
+  .row .mv:hover{color:var(--accent);border-color:var(--accent)}
+  .row .del.armed{color:var(--danger);font-weight:700;font-size:12px;white-space:nowrap}
+  /* ---- 看大图 ---- */
+  #lightbox{
+    display:none;position:fixed;inset:0;background:rgba(20,15,10,.86);
+    align-items:center;justify-content:center;z-index:50;cursor:zoom-out;padding:20px;
+  }
+  #lightbox img{max-width:100%;max-height:100%;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.4)}
+  footer{text-align:center;color:var(--footer);font-size:12px;margin-top:32px;line-height:1.8}
+  /* ---- 主题切换小圆钮：低调，半透明，悬停才亮起来 ---- */
+  #themeBtn{
+    margin-left:auto;flex:none;align-self:center;
+    width:30px;height:30px;border-radius:50%;
+    border:1px solid var(--line);background:var(--card);color:var(--ink-2);
+    font-size:13px;line-height:1;cursor:pointer;opacity:.5;
+    transition:opacity .2s,color .2s,border-color .2s,background-color .45s;
+  }
+  #themeBtn:hover{opacity:1;color:var(--accent);border-color:var(--accent)}
+  /* 换主题时大面积颜色平滑过渡（:where 零优先级，不干扰平时的交互速度） */
+  :where(body,.card,.group-head,.field input,.range-row input[type=date],
+  .quick button,.export-btn,.shot-row .pick,.row .mv,.inline-edit,#themeBtn){
+    transition:background-color .45s ease,color .45s ease,border-color .45s ease,box-shadow .45s ease;
+  }
+</style>
+<script>
+/* 在页面还没画出来之前就先把上次选的主题套上，避免"先白一下再变暗"的闪烁 */
+try{
+  var _savedTheme = localStorage.getItem("yizhang-theme");
+  if(_savedTheme) document.documentElement.setAttribute("data-theme", _savedTheme);
+}catch(e){}
+</script>
 </head>
 <body>
-  <main>
-    <h1>Joye 的个人网站</h1>
-    <p>施工中：这个占位页会在第 7 天换成真正的 MVP。</p>
-    <span class="badge">Day 2 · 第一次提交 · 网站从今天开始有了地址</span>
-  </main>
+<div class="wrap">
+
+  <header>
+    <h1>艺账</h1>
+    <span class="sub">自己的账，自己说了算</span>
+    <button id="themeBtn" title="主题">☀</button>
+  </header>
+
+  <!-- 时间段总额 -->
+  <section class="card">
+    <div class="quick">
+      <button data-q="today">今天</button>
+      <button data-q="month" class="on">本月</button>
+      <button data-q="all">全部</button>
+    </div>
+    <div class="range-row">
+      <span>从</span><input type="date" id="fromDate">
+      <span>到</span><input type="date" id="toDate">
+    </div>
+    <div class="total-num"><span class="rmb">￥</span><span id="totalAmount">0.00</span></div>
+    <div class="total-meta" id="totalMeta">共 0 笔</div>
+    <button class="export-btn" id="exportBtn">⬇ 导出 Excel</button>
+    <button class="export-btn" id="exportXBtn">🖼 Excel 含截图</button>
+    <button class="export-btn" id="collageBtn">🧩 拼长图</button>
+    <div class="folder-row">
+      <button class="export-btn" id="folderBtn">📁 导出文件夹</button>
+      <button class="export-btn" id="restoreBtn" style="display:none">📂 从备份恢复</button>
+      <span id="folderInfo">未设置 → 存到下载文件夹</span>
+    </div>
+  </section>
+
+  <!-- 记一笔 -->
+  <section class="card">
+    <div class="grid">
+      <div class="field">
+        <label>品类</label>
+        <input id="fCat" list="catList" placeholder="餐饮/水果，可留空">
+        <datalist id="catList"></datalist>
+      </div>
+      <div class="field">
+        <label>时间</label>
+        <input id="fDate" type="date">
+      </div>
+      <div class="field">
+        <label>买什么</label>
+        <input id="fItem" placeholder="留空自动起名">
+      </div>
+      <div class="field">
+        <label>金额</label>
+        <input id="fAmt" type="number" step="0.01" min="0" inputmode="decimal" placeholder="0.00">
+      </div>
+    </div>
+    <div class="shot-row">
+      <label class="pick" id="pickBtn">＋ 添加截图</label>
+      <input type="file" id="fShot" accept="image/*" multiple>
+      <img id="shotPreview" class="thumb-mini" style="display:none" alt="截图预览">
+      <button id="clearShot" class="clear-shot" style="display:none">移除截图</button>
+    </div>
+    <button class="save-btn" id="saveBtn">记一笔</button>
+    <div class="hint">名字可留空：品类空 → 未分类，物资空 → 自动起名。截图可连加多张，自动拼一张。品类用 / 分级，如「餐饮/水果」。</div>
+  </section>
+
+  <!-- 明细列表 -->
+  <section id="list"></section>
+
+  <footer>艺账 v0.9.2 · 数据只在你自己的设备上</footer>
+</div>
+
+<div id="lightbox"><img id="lightboxImg" alt=""></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ================= 数据层：IndexedDB =================
+     截图是图片，体积大，localStorage（约 5MB）装不下几张，
+     所以用浏览器的 IndexedDB——同样纯本地，不出这台电脑。 */
+  var DB_NAME = "yizhang-db";
+  var dbPromise = null;
+  function db(){
+    if(!dbPromise){
+      dbPromise = new Promise(function(res, rej){
+        var req = indexedDB.open(DB_NAME, 1);
+        req.onupgradeneeded = function(e){
+          var d = e.target.result;
+          if(!d.objectStoreNames.contains("entries")) d.createObjectStore("entries", {keyPath:"id"});
+        };
+        req.onsuccess = function(){ res(req.result); };
+        req.onerror = function(){ rej(req.error); };
+      });
+    }
+    return dbPromise;
+  }
+  function txPut(entry){
+    return db().then(function(d){
+      return new Promise(function(res, rej){
+        var t = d.transaction("entries","readwrite");
+        t.objectStore("entries").put(entry);
+        t.oncomplete = res; t.onerror = function(){ rej(t.error); };
+      });
+    });
+  }
+  function txDelete(id){
+    return db().then(function(d){
+      return new Promise(function(res, rej){
+        var t = d.transaction("entries","readwrite");
+        t.objectStore("entries").delete(id);
+        t.oncomplete = res; t.onerror = function(){ rej(t.error); };
+      });
+    });
+  }
+  function txAll(){
+    return db().then(function(d){
+      return new Promise(function(res, rej){
+        var req = d.transaction("entries","readonly").objectStore("entries").getAll();
+        req.onsuccess = function(){ res(req.result || []); };
+        req.onerror = function(){ rej(req.error); };
+      });
+    });
+  }
+
+  /* ================= 工具函数 ================= */
+  function $(id){ return document.getElementById(id); }
+  function pad2(n){ return (n<10?"0":"")+n; }
+  function todayStr(){ var d=new Date(); return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()); }
+  function money(n){ return n.toLocaleString("zh-CN",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+  function uid(){ return (crypto.randomUUID ? crypto.randomUUID() : Date.now()+"-"+Math.random().toString(16).slice(2)); }
+  function fmtDateCN(s){
+    var p = s.split("-"); return parseInt(p[1],10)+"月"+parseInt(p[2],10)+"日";
+  }
+  function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+  /* 品类路径归一化：「餐饮 / 水果 /」→「餐饮/水果」。
+     品类从此支持无限分支：用 / 分级，每一级就是一个分支节点。 */
+  function normalizeCat(v){
+    return String(v || "").split("/").map(function(s){ return s.trim(); })
+      .filter(Boolean).join("/");
+  }
+
+  /* ================= 状态 ================= */
+  var entries = [];                 // 全部账目（内存缓存）
+  var range = {from:null, to:null}; // 当前时间段（null = 不限）
+  var pendingShot = null;           // 待保存的截图 dataURL（多张时已是拼好的那张）
+  var pendingShotsList = [];        // 本次已添加的各张截图（每次添加后重新拼）
+  /* 树形分类的折叠记忆：收起过的分支路径记在这里，刷新后还原 */
+  var collapsedSet = {};
+  try{
+    (JSON.parse(localStorage.getItem("yizhang-collapsed") || "[]")).forEach(function(p){ collapsedSet[p] = true; });
+  }catch(e){}
+  function saveCollapsed(){
+    try{ localStorage.setItem("yizhang-collapsed", JSON.stringify(Object.keys(collapsedSet))); }catch(e){}
+  }
+
+  /* ================= 时间段 ================= */
+  function setQuick(kind){
+    var t = todayStr();
+    if(kind==="today"){ range = {from:t, to:t}; }
+    else if(kind==="month"){
+      var d = new Date();
+      range = {from: d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-01", to:t};
+    }
+    else { range = {from:null, to:null}; }
+    $("fromDate").value = range.from || "";
+    $("toDate").value = range.to || "";
+    refreshQuickBtns(kind);
+    render();
+  }
+  function refreshQuickBtns(kind){
+    var btns = document.querySelectorAll(".quick button");
+    btns.forEach(function(b){ b.classList.toggle("on", b.dataset.q===kind); });
+  }
+
+  /* ================= 统计与渲染 ================= */
+  function inRange(e){
+    if(range.from && e.date < range.from) return false;
+    if(range.to && e.date > range.to) return false;
+    return true;
+  }
+  function render(){
+    var list = entries.filter(inRange).sort(function(a,b){
+      if(a.date !== b.date) return a.date < b.date ? 1 : -1;
+      return b.createdAt - a.createdAt;
+    });
+
+    // 总额
+    var total = list.reduce(function(s,e){ return s + e.amount; }, 0);
+    $("totalAmount").textContent = money(total);
+    $("totalMeta").textContent = "共 " + list.length + " 笔" +
+      (range.from||range.to ? "（"+(range.from?fmtDateCN(range.from):"最早")+" ~ "+(range.to?fmtDateCN(range.to):"最新")+"）" : "（全部）");
+
+    // 品类 datalist：把每条路径和它所有的上级前缀都列出来，方便录入时选
+    var cats = {};
+    entries.forEach(function(e){
+      var segs = e.category.split("/");
+      for(var i = 1; i <= segs.length; i++) cats[segs.slice(0, i).join("/")] = true;
+    });
+    $("catList").innerHTML = Object.keys(cats).sort().map(function(c){
+      return "<option value=\""+esc(c)+"\">";
+    }).join("");
+
+    // 树形列表：品类路径用 / 分级，可以无限分支。
+    // 每个节点 = 一张组卡，父级的小计/笔数自动包含所有子孙。
+    var box = $("list");
+    if(entries.length === 0){
+      box.innerHTML = "<div class='card'><div class='empty'>还没有账。<b>在上面记第一笔</b>。</div></div>";
+      return;
+    }
+    if(list.length === 0){
+      box.innerHTML = "<div class='card'><div class='empty'>这个时间段没有账。</div></div>";
+      return;
+    }
+    var root = { path:"", name:"", children:{}, order:[], direct:[] };
+    list.forEach(function(e){
+      var segs = e.category.split("/");
+      var node = root;
+      segs.forEach(function(s){
+        var p = node.path ? node.path + "/" + s : s;
+        if(!node.children[s]){
+          node.children[s] = { path:p, name:s, children:{}, order:[], direct:[] };
+          node.order.push(s);
+        }
+        node = node.children[s];
+      });
+      node.direct.push(e);
+    });
+    (function calc(n){
+      n.count = n.direct.length;
+      n.sum = n.direct.reduce(function(s,e){ return s + e.amount; }, 0);
+      n.order.forEach(function(k){
+        var c = n.children[k]; calc(c);
+        n.count += c.count; n.sum += c.sum;
+      });
+    })(root);
+
+    function rowsHtml(direct){
+      return direct.map(function(e){
+        return "<div class='row'>" +
+          "<span class='name' data-id=\""+e.id+"\" title=\"点击改名\">"+esc(e.item)+"</span>" +
+          "<span class='date'>"+fmtDateCN(e.date)+"</span>" +
+          (e.shot ? "<img class='thumb' data-id=\""+e.id+"\" src=\""+e.shot+"\" alt=\"截图\">" : "") +
+          "<button class='mv' data-id=\""+e.id+"\" title=\"把这一笔挪到别的品类（可写 餐饮/水果）\">归类</button>" +
+          "<span class='amt'>￥"+money(e.amount)+"</span>" +
+          "<button class='del' data-id=\""+e.id+"\" title=\"删除这一笔\">✕</button>" +
+          "</div>";
+      }).join("");
+    }
+    function nodeHtml(node, depth){
+      var collapsed = collapsedSet[node.path];
+      var hasKids = node.order.length > 0;
+      var h = "<div class='group card'" + (depth ? " style='margin-left:" + Math.min(depth * 20, 100) + "px'" : "") + ">";
+      h += "<div class='group-head'>";
+      h += hasKids
+        ? "<button class='gcaret' data-cat=\""+esc(node.path)+"\" title=\"展开 / 收起\">"+(collapsed ? "▸" : "▾")+"</button>"
+        : "<span class='gcaret none'></span>";
+      h += "<span class='cat cat-name' data-cat=\""+esc(node.path)+"\" title=\""+esc(node.path)+"（点击改名）\">"+esc(node.name)+"</span>";
+      h += "<span class='meta'>"+node.count+" 笔 · ￥"+money(node.sum)+"</span>";
+      h += "</div>";
+      if(!collapsed){
+        h += rowsHtml(node.direct);
+        node.order.sort().forEach(function(k){ h += nodeHtml(node.children[k], depth + 1); });
+      }
+      return h + "</div>";
+    }
+    var html = "";
+    root.order.sort().forEach(function(k){ html += nodeHtml(root.children[k], 0); });
+    box.innerHTML = html;
+  }
+
+  /* ================= 增删改 ================= */
+  function autoItemName(dateStr){
+    var p = dateStr.split("-");
+    var prefix = p[1] + p[2];            // 如 0912
+    var seq = 1;
+    entries.forEach(function(e){
+      if(e.item.indexOf(prefix + "-") === 0){
+        var n = parseInt(e.item.slice(prefix.length+1), 10);
+        if(!isNaN(n) && n >= seq) seq = n + 1;
+      }
+    });
+    return prefix + "-" + seq;
+  }
+
+  function saveCurrent(){
+    var amt = parseFloat($("fAmt").value);
+    if(isNaN(amt) || amt <= 0){
+      $("fAmt").focus();
+      $("fAmt").style.borderColor = "var(--danger)";
+      setTimeout(function(){ $("fAmt").style.borderColor = ""; }, 1200);
+      return;
+    }
+    var dateStr = $("fDate").value || todayStr();
+    var cat = normalizeCat($("fCat").value) || "未分类";
+    var item = $("fItem").value.trim() || autoItemName(dateStr);
+
+    var entry = {
+      id: uid(),
+      category: cat,
+      date: dateStr,
+      item: item,
+      amount: Math.round(amt*100)/100,
+      shot: pendingShot,          // dataURL 字符串或 null
+      createdAt: Date.now()
+    };
+    txPut(entry).then(function(){
+      entries.push(entry);
+      pendingShot = null;
+      pendingShotsList = [];
+      $("fShot").value = "";
+      updateShotUI();
+      $("fItem").value = "";
+      $("fAmt").value = "";
+      $("fItem").focus();
+      render();
+      backupEntries();
+      var btn = $("saveBtn");
+      btn.textContent = "已记 ✓";
+      btn.classList.add("done");
+      setTimeout(function(){ btn.textContent = "记一笔"; btn.classList.remove("done"); }, 900);
+    }).catch(function(err){
+      alert("保存失败：" + err);
+    });
+  }
+
+  function readFileAsDataURL(file){
+    return new Promise(function(res, rej){
+      var r = new FileReader();
+      r.onload = function(){ res(r.result); };
+      r.onerror = function(){ rej(new Error("读取文件失败")); };
+      r.readAsDataURL(file);
+    });
+  }
+  // 多张截图横向拼成一张（左右排列）：统一高度（取各图最小自然高，上限 1600），白缝分隔
+  function stitchShots(dataUrls){
+    return Promise.all(dataUrls.map(loadImg)).then(function(ims){
+      var GAP = 8;
+      var H = Math.min.apply(null, ims.map(function(im){ return im.naturalHeight; }).concat([1600]));
+      H = Math.max(1, Math.round(H));
+      var scaled = ims.map(function(im){
+        var w = Math.max(1, Math.round(im.naturalWidth * H / im.naturalHeight));
+        return { im: im, w: w };
+      });
+      var W = GAP * (scaled.length - 1) + scaled.reduce(function(s, x){ return s + x.w; }, 0);
+      if(W > 12000) throw new Error("截图张数太多，超出拼接上限，请减少张数");
+      var c = document.createElement("canvas");
+      c.width = W; c.height = H;
+      var ctx = c.getContext("2d");
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, W, H);
+      var x = 0;
+      scaled.forEach(function(s2){ ctx.drawImage(s2.im, x, 0, s2.w, H); x += s2.w + GAP; });
+      return c.toDataURL("image/jpeg", 0.82);
+    });
+  }
+  function pickFiles(files){
+    var arr = Array.prototype.slice.call(files || []);
+    if(arr.length === 0) return;
+    $("pickBtn").textContent = "正在读取 " + arr.length + " 张截图…";
+    Promise.all(arr.map(readFileAsDataURL)).then(function(urls){
+      pendingShotsList = pendingShotsList.concat(urls);   // 增量追加
+      return restitchPending();
+    }).catch(function(err){
+      $("pickBtn").textContent = (err && err.message) ? err.message : "截图读取失败，请重试";
+      setTimeout(updateShotUI, 2600);
+    });
+  }
+  // 把已添加的截图列表拼成一张（1 张直接用），拼好立刻显示在框里
+  function restitchPending(){
+    var job = pendingShotsList.length === 1
+      ? Promise.resolve(pendingShotsList[0])
+      : stitchShots(pendingShotsList);
+    return job.then(function(stitched){
+      pendingShot = stitched;
+      updateShotUI();
+    }).catch(function(err){
+      pendingShot = null; updateShotUI();
+      $("pickBtn").textContent = (err && err.message) ? err.message : "拼接失败，请减少张数重试";
+      setTimeout(updateShotUI, 3000);
+    });
+  }
+  function updateShotUI(){
+    var n = pendingShotsList.length;
+    var has = !!pendingShot;
+    $("shotPreview").style.display = has ? "block" : "none";
+    $("clearShot").style.display = has ? "inline" : "none";
+    $("pickBtn").classList.toggle("has", has);
+    $("pickBtn").textContent = n === 0 ? "＋ 添加截图"
+      : (n > 1 ? "已拼 " + n + " 张 ✓" : "已加 1 张 ✓");
+    if(has) $("shotPreview").src = pendingShot;
+  }
+
+  /* ================= 导出 Excel =================
+     生成 SpreadsheetML 2003（Excel/WPS 都能直接打开的 XML 表格格式），
+     结构一比一复刻《小艺资金表》9月12日- 页：
+     A 品类(纵向合并) B 时间(同日合并,真日期) C 购买物资 D 金额(￥格式)
+     E 截图(暂以文字占位) F 总金额(=SUM 公式,合并到最后一行)
+     图片嵌入需要 zip 格式的 .xlsx，留给后续版本配合拼长图一起做。 */
+  function xmlEsc(s){
+    return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")
+      .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
+  // 纯计算：给定已排好序的账目数组，返回整份 SpreadsheetML XML 字符串。
+  // 不碰页面元素，所以能在 Node 里单独跑测试。
+  function buildWorkbookXml(list){
+    // 按品类分组（连续），组内已按日期升序
+    var groups = []; var gidx = {};
+    list.forEach(function(e){
+      if(!gidx[e.category]){ gidx[e.category] = []; groups.push(e.category); }
+      gidx[e.category].push(e);
+    });
+
+    var totalRows = list.length;
+    var lastDataRow = 1 + totalRows;          // Excel 行号：数据从第 2 行开始
+    var grandTotal = list.reduce(function(s,e){ return s + e.amount; }, 0);
+
+    var rowsXml = "";
+    // 表头
+    rowsXml += "<Row>" + ["","时间","购买物资","金额","截图","总金额"].map(function(h){
+      return '<Cell ss:StyleID="head"><Data ss:Type="String">' + h + '</Data></Cell>';
+    }).join("") + "</Row>";
+
+    // 数据行：每行固定输出 6 个单元格，被合并覆盖的位置留空
+    var i = 0; // 全局数据行序号（0 起）
+    groups.forEach(function(cat){
+      var g = gidx[cat];
+      var dOrder = []; var dIdx = {};
+      g.forEach(function(e){
+        if(!dIdx[e.date]){ dIdx[e.date] = []; dOrder.push(e.date); }
+        dIdx[e.date].push(e);
+      });
+      dOrder.forEach(function(dstr){
+        var rows = dIdx[dstr];
+        rows.forEach(function(e, ri){
+          var firstOfGroup = (ri === 0 && dOrder.indexOf(dstr) === 0);
+          var firstOfDate = (ri === 0);
+          var cells = "";
+
+          // A 品类
+          if(firstOfGroup){
+            cells += '<Cell ss:StyleID="cat" ss:MergeDown="' + (g.length - 1) + '"><Data ss:Type="String">' + xmlEsc(cat) + '</Data></Cell>';
+          } else {
+            cells += "<Cell/>";
+          }
+          // B 时间
+          if(firstOfDate){
+            cells += '<Cell ss:StyleID="dfmt" ss:MergeDown="' + (rows.length - 1) + '"><Data ss:Type="DateTime">' + dstr + 'T00:00:00</Data></Cell>';
+          } else {
+            cells += "<Cell/>";
+          }
+          // C 购买物资
+          cells += '<Cell><Data ss:Type="String">' + xmlEsc(e.item) + '</Data></Cell>';
+          // D 金额
+          cells += '<Cell ss:StyleID="cur"><Data ss:Type="Number">' + e.amount.toFixed(2) + '</Data></Cell>';
+          // E 截图（占位：图片嵌入后续版本做）
+          cells += '<Cell><Data ss:Type="String">' + (e.shot ? "有截图" : "") + '</Data></Cell>';
+          // F 总金额（只在第一行数据上，SUM 覆盖全部数据行）
+          if(i === 0){
+            cells += '<Cell ss:StyleID="cur" ss:MergeDown="' + (totalRows - 1) + '" ss:Formula="=SUM(R2C4:R' + lastDataRow + 'C4)"><Data ss:Type="Number">' + grandTotal.toFixed(2) + '</Data></Cell>';
+          } else {
+            cells += '<Cell ss:StyleID="cur"/>';
+          }
+
+          rowsXml += "<Row>" + cells + "</Row>";
+          i++;
+        });
+      });
+    });
+
+    return '<?xml version="1.0"?>\n<?mso-application progid="Excel.Sheet"?>\n' +
+      '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">' +
+      '<Styles>' +
+      '<Style ss:ID="Default" ss:Name="Normal"><Alignment ss:Vertical="Center"/></Style>' +
+      '<Style ss:ID="head"><Font ss:Bold="1"/><Interior ss:Color="#E8F0FE" ss:Pattern="Solid"/><Alignment ss:Vertical="Center"/></Style>' +
+      '<Style ss:ID="cat"><Font ss:Bold="1"/><Alignment ss:Vertical="Center"/></Style>' +
+      '<Style ss:ID="cur"><NumberFormat ss:Format="&quot;\uFFE5&quot;#,##0.00"/><Alignment ss:Vertical="Center"/></Style>' +
+      '<Style ss:ID="dfmt"><NumberFormat ss:Format="yyyy&quot;\u5E74&quot;m&quot;\u6708&quot;d&quot;\u65E5&quot;"/><Alignment ss:Vertical="Center"/></Style>' +
+      '</Styles>' +
+      '<Worksheet ss:Name="艺账"><Table>' +
+      '<Column ss:Width="90"/><Column ss:Width="110"/><Column ss:Width="140"/>' +
+      '<Column ss:Width="85"/><Column ss:Width="70"/><Column ss:Width="100"/>' +
+      rowsXml +
+      '</Table></Worksheet></Workbook>';
+  }
+
+  function exportExcel(){
+    var btn = $("exportBtn");
+    var list = entries.filter(inRange).sort(function(a,b){
+      if(a.category !== b.category) return a.category < b.category ? -1 : 1;
+      if(a.date !== b.date) return a.date < b.date ? -1 : 1;
+      return a.createdAt - b.createdAt;
+    });
+    if(list.length === 0){
+      btn.disabled = true; btn.textContent = "这个时间段没有账，无法导出";
+      setTimeout(function(){ btn.disabled = false; btn.textContent = "⬇ 导出 Excel"; }, 1800);
+      return;
+    }
+
+    var xml = buildWorkbookXml(list);
+    var fname = rangeFname("艺账", ".xls");
+    deliver(fname, xml, "application/vnd.ms-excel").then(function(msg){
+      btn.textContent = msg;
+      setTimeout(function(){ btn.textContent = "⬇ 导出 Excel"; }, 2600);
+    });
+  }
+
+  /* ================= 固定导出文件夹 =================
+     浏览器的 File System Access API：选一次文件夹，
+     之后每次导出都自动写进那个文件夹——文件固定落位，
+     软件怎么更新、网页数据怎么清，这个文件夹里的记录都在。
+     手机 Safari 暂不支持此 API：自动退回普通下载（下载文件夹）。 */
+  var HAS_FSA = typeof window.showDirectoryPicker === "function";
+  var dirHandle = null;
+
+  function hdb(){
+    return new Promise(function(res, rej){
+      var req = indexedDB.open("yizhang-handles", 1);
+      req.onupgradeneeded = function(e){
+        var d = e.target.result;
+        if(!d.objectStoreNames.contains("handles")) d.createObjectStore("handles");
+      };
+      req.onsuccess = function(){ res(req.result); };
+      req.onerror = function(){ rej(req.error); };
+    });
+  }
+  function saveDirHandle(h){
+    return hdb().then(function(d){
+      return new Promise(function(res, rej){
+        var t = d.transaction("handles","readwrite");
+        t.objectStore("handles").put(h, "exportDir");
+        t.oncomplete = res; t.onerror = function(){ rej(t.error); };
+      });
+    });
+  }
+  function loadDirHandle(){
+    return hdb().then(function(d){
+      return new Promise(function(res, rej){
+        var req = d.transaction("handles","readonly").objectStore("handles").get("exportDir");
+        req.onsuccess = function(){ res(req.result || null); };
+        req.onerror = function(){ rej(req.error); };
+      });
+    });
+  }
+  function updateFolderUI(){
+    $("folderInfo").textContent = dirHandle
+      ? "导出与备份存入「" + dirHandle.name + "」"
+      : (HAS_FSA ? "未设置 → 存到下载文件夹" : "此浏览器不支持选文件夹，导出存到下载文件夹");
+    $("folderBtn").textContent = "📁 导出文件夹";
+    $("restoreBtn").style.display = dirHandle ? "inline-block" : "none";
+  }
+  function pickExportFolder(){
+    if(!HAS_FSA) return;
+    window.showDirectoryPicker({ id: "yizhang-export", mode: "readwrite" }).then(function(h){
+      dirHandle = h;
+      return saveDirHandle(h).then(updateFolderUI);
+    }).catch(function(){ /* 取消选择：保留原设置 */ });
+  }
+  function writeDirFile(name, blob){
+    return dirHandle.getFileHandle(name, { create: true }).then(function(fh){
+      return fh.createWritable();
+    }).then(function(w){
+      return w.write(blob).then(function(){ return w.close(); });
+    });
+  }
+  // 统一出口：设了固定文件夹就写进去，没设就走普通下载。返回提示语。
+  function deliver(fname, bytesOrBlob, mime){
+    var blob = bytesOrBlob instanceof Blob ? bytesOrBlob : new Blob([bytesOrBlob], { type: mime });
+    if(!dirHandle){
+      downloadBlob(blob, mime, fname);
+      return Promise.resolve("已下载 ✓ " + fname);
+    }
+    return dirHandle.queryPermission({ mode: "readwrite" }).then(function(p){
+      if(p === "granted") return p;
+      return dirHandle.requestPermission({ mode: "readwrite" });
+    }).then(function(p){
+      if(p !== "granted"){
+        downloadBlob(blob, mime, fname);
+        return "已下载 ✓ " + fname;
+      }
+      return writeDirFile(fname, blob).then(function(){
+        return "已存入「" + dirHandle.name + "」✓ " + fname;
+      });
+    }).catch(function(){
+      downloadBlob(blob, mime, fname);
+      return "已下载 ✓ " + fname;
+    });
+  }
+
+  /* --- 自动备份：每次记账/改名/删除后，把全部账目静默写进固定文件夹 ---
+     文件固定叫「艺账备份.json」，每次整体覆盖（永远是最新的完整账本）。
+     浏览器数据万一被手机系统清掉，点「📂 从备份恢复」一键找回。 */
+  var BACKUP_NAME = "艺账备份.json";
+  function backupEntries(){
+    if(!dirHandle) return;
+    dirHandle.queryPermission({ mode: "readwrite" }).then(function(p){
+      if(p !== "granted") return;
+      return writeDirFile(BACKUP_NAME, new Blob([JSON.stringify(entries)], { type: "application/json" }));
+    }).catch(function(){ /* 备份失败不打扰记账，下次操作再试 */ });
+  }
+  function restoreFromBackup(){
+    var btn = $("restoreBtn");
+    var oldText = btn.textContent;
+    if(!dirHandle) return;
+    btn.disabled = true; btn.textContent = "正在恢复…";
+    dirHandle.queryPermission({ mode: "readwrite" }).then(function(p){
+      if(p === "granted") return p;
+      return dirHandle.requestPermission({ mode: "readwrite" });
+    }).then(function(p){
+      if(p !== "granted") throw new Error("没有文件夹授权");
+      return dirHandle.getFileHandle(BACKUP_NAME);
+    }).then(function(fh){ return fh.getFile(); })
+    .then(function(f){ return f.text(); })
+    .then(function(txt){
+      var arr = JSON.parse(txt);
+      if(!Array.isArray(arr)) throw new Error("备份文件格式不对");
+      return db().then(function(d){
+        return new Promise(function(res, rej){
+          var t = d.transaction("entries","readwrite");
+          var st = t.objectStore("entries");
+          st.clear();
+          arr.forEach(function(e){ st.put(e); });
+          t.oncomplete = res; t.onerror = function(){ rej(t.error); };
+        });
+      });
+    })
+    .then(txAll)
+    .then(function(list){
+      entries = list;
+      render();
+      btn.disabled = false;
+      btn.textContent = "已恢复 ✓ 共 " + entries.length + " 笔";
+      setTimeout(function(){ btn.textContent = "📂 从备份恢复"; }, 2600);
+    })
+    .catch(function(err){
+      btn.disabled = false;
+      btn.textContent = err && /格式|授权/.test(err.message) ? err.message : "没找到备份文件";
+      setTimeout(function(){ btn.textContent = "📂 从备份恢复"; }, 3000);
+    });
+  }
+
+  /* ================= 图片底座：加载 / 缩略 / ZIP / xlsx / 拼长图 =================
+     真正的 .xlsx 本质是一个 zip 包，图片作为「媒体文件」装在里面。
+     浏览器有现成的二进制工具（TextEncoder / Uint8Array），所以 zip 打包器自己写：
+     只存不压（store），Excel 完全接受；图片先压成缩略图再嵌入，控制文件体积。 */
+
+  function loadImg(src){
+    return new Promise(function(res, rej){
+      var im = new Image();
+      im.onload = function(){ res(im); };
+      im.onerror = function(){ rej(new Error("图片加载失败")); };
+      im.src = src;
+    });
+  }
+
+  // 大截图 → 缩略图（宽不超 maxW，JPEG 压缩），返回 {dataUrl,w,h}
+  function makeThumb(dataUrl, maxW){
+    return loadImg(dataUrl).then(function(im){
+      var w = im.naturalWidth, h = im.naturalHeight;
+      var tw = Math.min(maxW, w);
+      var th = Math.max(1, Math.round(h * tw / w));
+      var c = document.createElement("canvas");
+      c.width = tw; c.height = th;
+      var ctx = c.getContext("2d");
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, tw, th);
+      ctx.drawImage(im, 0, 0, tw, th);
+      return { dataUrl: c.toDataURL("image/jpeg", 0.75), w: tw, h: th };
+    });
+  }
+
+  // Excel 嵌入用：把截图（含拼好的长图）适配进「格子显示盒」。
+  // 数据分辨率是显示尺寸的 2 倍（放大看清楚），w/h 返回的是格子里的显示像素。
+  function makeCellShot(dataUrl){
+    return loadImg(dataUrl).then(function(im){
+      var w = im.naturalWidth, h = im.naturalHeight;
+      var BOX_W = 220, BOX_H = 600;      // 数据分辨率上限（= 显示 110×300 的 2 倍，配窄列宽）
+      var k = Math.min(BOX_W / w, BOX_H / h, 1);
+      var tw = Math.max(1, Math.round(w * k));
+      var th = Math.max(1, Math.round(h * k));
+      var c = document.createElement("canvas");
+      c.width = tw; c.height = th;
+      var ctx = c.getContext("2d");
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, tw, th);
+      ctx.drawImage(im, 0, 0, tw, th);
+      return {
+        dataUrl: c.toDataURL("image/jpeg", 0.78),
+        w: Math.max(1, Math.round(tw / 2)),
+        h: Math.max(1, Math.round(th / 2))
+      };
+    });
+  }
+
+  function dataUrlToU8(dataUrl){
+    var b64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
+    var bin = atob(b64);
+    var u8 = new Uint8Array(bin.length);
+    for(var i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    return u8;
+  }
+
+  // WPS 嵌入单元格图片的长 ID：ID_ + 32 位十六进制（照 WPS 的规则生成）
+  function wpsImgId(){
+    var h = "0123456789ABCDEF", s = "";
+    for(var i = 0; i < 32; i++) s += h[Math.floor(Math.random() * 16)];
+    return "ID_" + s;
+  }
+
+  /* --- 极简 ZIP：CRC32 + 只存不压 --- */
+  var _crcTable = (function(){
+    var t = [], c, n, k;
+    for(n = 0; n < 256; n++){ c = n; for(k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); t[n] = c >>> 0; }
+    return t;
+  })();
+  function crc32(u8){
+    var c = 0xFFFFFFFF, i;
+    for(i = 0; i < u8.length; i++) c = _crcTable[(c ^ u8[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+  // files: [{name, data:Uint8Array}] → 一个完整的 zip 字节数组
+  function zipStore(files){
+    var enc = new TextEncoder();
+    var parts = [], central = [], offset = 0;
+    var dosTime = 0, dosDate = ((2026 - 1980) << 9) | (9 << 5) | 19;   // 固定日期即可，zip 只是个容器
+    files.forEach(function(f){
+      var nb = enc.encode(f.name), data = f.data, crc = crc32(data);
+      var lh = new Uint8Array(30 + nb.length);
+      var v = new DataView(lh.buffer);
+      v.setUint32(0, 0x04034b50, true);
+      v.setUint16(4, 20, true); v.setUint16(6, 0x0800, true);
+      v.setUint16(8, 0, true);
+      v.setUint16(10, dosTime, true); v.setUint16(12, dosDate, true);
+      v.setUint32(14, crc, true);
+      v.setUint32(18, data.length, true); v.setUint32(22, data.length, true);
+      v.setUint16(26, nb.length, true); v.setUint16(28, 0, true);
+      lh.set(nb, 30);
+      parts.push(lh, data);
+      var ch = new Uint8Array(46 + nb.length);
+      var cv = new DataView(ch.buffer);
+      cv.setUint32(0, 0x02014b50, true);
+      cv.setUint16(4, 20, true); cv.setUint16(6, 20, true);
+      cv.setUint16(8, 0x0800, true); cv.setUint16(10, 0, true);
+      cv.setUint16(12, dosTime, true); cv.setUint16(14, dosDate, true);
+      cv.setUint32(16, crc, true);
+      cv.setUint32(20, data.length, true); cv.setUint32(24, data.length, true);
+      cv.setUint16(28, nb.length, true);
+      cv.setUint32(42, offset, true);
+      ch.set(nb, 46);
+      central.push(ch);
+      offset += lh.length + data.length;
+    });
+    var centralSize = central.reduce(function(s, c){ return s + c.length; }, 0);
+    var end = new Uint8Array(22);
+    var ev = new DataView(end.buffer);
+    ev.setUint32(0, 0x06054b50, true);
+    ev.setUint16(8, files.length, true); ev.setUint16(10, files.length, true);
+    ev.setUint32(12, centralSize, true); ev.setUint32(16, offset, true);
+    var all = parts.concat(central, [end]);
+    var total = all.reduce(function(s, c){ return s + c.length; }, 0);
+    var out = new Uint8Array(total), pos = 0;
+    all.forEach(function(c){ out.set(c, pos); pos += c.length; });
+    return out;
+  }
+
+  function dateSerial(dstr){   // Excel 日期 = 天数（从 1899-12-30 起）
+    var p = dstr.split("-");
+    return Math.round(Date.UTC(+p[0], +p[1] - 1, +p[2]) / 86400000) + 25569;
+  }
+
+  /* --- 纯计算：生成含截图的 .xlsx 字节 ---
+     list: [{category,date,item,amount,shot:{dataUrl,w,h}|null}]
+     （shot 是浏览器端压好的缩略图；测试时可直接传，不必开浏览器） */
+  function buildXlsx(list){
+    var lastDataRow = 1 + list.length;
+    var grandTotal = list.reduce(function(s, e){ return s + e.amount; }, 0);
+    function esc(s){
+      return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    }
+
+    var rows = '<row r="1">' + ["","时间","购买物资","金额","截图","总金额"].map(function(h, ci){
+      return '<c r="' + "ABCDEF"[ci] + '1" s="1" t="inlineStr"><is><t>' + h + '</t></is></c>';
+    }).join("") + "</row>";
+
+    var merges = [];
+    var groups = []; var gidx = {};
+    list.forEach(function(e){
+      if(!gidx[e.category]){ gidx[e.category] = []; groups.push(e.category); }
+      gidx[e.category].push(e);
+    });
+
+    var media = [];  // {name, data:Uint8Array, id, w, h}
+    var ri = 0;      // 数据行序号（0 起）
+    groups.forEach(function(cat){
+      var g = gidx[cat];
+      var dOrder = []; var dIdx = {};
+      g.forEach(function(e){
+        if(!dIdx[e.date]){ dIdx[e.date] = []; dOrder.push(e.date); }
+        dIdx[e.date].push(e);
+      });
+      if(g.length > 1) merges.push("A" + (ri + 2) + ":A" + (ri + 1 + g.length));
+      dOrder.forEach(function(dstr){
+        var rowsArr = dIdx[dstr];
+        if(rowsArr.length > 1) merges.push("B" + (ri + 2) + ":B" + (ri + 1 + rowsArr.length));
+        rowsArr.forEach(function(e, idx){
+          var r = ri + 2;
+          var hasShot = !!(e.shot && media.length < 200);
+          if(hasShot){
+            var u8 = dataUrlToU8(e.shot.dataUrl);
+            var isPng = e.shot.dataUrl.indexOf("image/png") > -1;
+            media.push({ name: "image" + (media.length + 1) + (isPng ? ".png" : ".jpeg"), data: u8, id: wpsImgId(), w: e.shot.w, h: e.shot.h });
+          }
+          var cells = "";
+          cells += (idx === 0 && dOrder.indexOf(dstr) === 0)
+            ? '<c r="A' + r + '" s="2" t="inlineStr"><is><t>' + esc(cat) + '</t></is></c>'
+            : '<c r="A' + r + '" s="2"/>';
+          cells += (idx === 0)
+            ? '<c r="B' + r + '" s="4"><v>' + dateSerial(dstr) + '</v></c>'
+            : '<c r="B' + r + '" s="4"/>';
+          cells += '<c r="C' + r + '" t="inlineStr"><is><t>' + esc(e.item) + '</t></is></c>';
+          cells += '<c r="D' + r + '" s="3"><v>' + e.amount.toFixed(2) + '</v></c>';
+          // E 截图：WPS 嵌入单元格机制——单元格内容本身就是图片（DISPIMG 公式），
+          // 不再写「见图片」文字，也不再放浮层图片
+          cells += hasShot
+            ? '<c r="E' + r + '" s="3"><f>DISPIMG("' + media[media.length - 1].id + '",1)</f></c>'
+            : '<c r="E' + r + '" s="3"/>';
+          cells += (ri === 0)
+            ? '<c r="F2" s="3"><f>SUM(D2:D' + lastDataRow + ')</f><v>' + grandTotal.toFixed(2) + '</v></c>'
+            : '<c r="F' + r + '" s="3"/>';
+          // 行高跟着截图显示高度走（px→pt = ×0.75），拼图高的行就高，保证图完整待在格里
+          var rowH = hasShot ? Math.min(360, Math.max(48, Math.round(e.shot.h * 0.75) + 8)) : null;
+          rows += '<row r="' + r + '"' + (rowH ? ' ht="' + rowH + '" customHeight="1"' : '') + '>' + cells + '</row>';
+          ri++;
+        });
+      });
+    });
+    if(list.length > 1) merges.push("F2:F" + lastDataRow);
+
+    var sheet1 = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+      '<cols>' +
+      '<col min="1" max="1" width="10" customWidth="1"/>' +
+      '<col min="2" max="2" width="12" customWidth="1"/>' +
+      '<col min="3" max="3" width="15" customWidth="1"/>' +
+      '<col min="4" max="4" width="9" customWidth="1"/>' +
+      '<col min="5" max="5" width="16" customWidth="1"/>' +
+      '<col min="6" max="6" width="11" customWidth="1"/>' +
+      '</cols><sheetData>' + rows + '</sheetData>' +
+      '<mergeCells count="' + merges.length + '">' +
+      merges.map(function(m){ return '<mergeCell ref="' + m + '"/>'; }).join("") +
+      '</mergeCells>' +
+      '</worksheet>';
+
+    // WPS「嵌入单元格的图片」：cellimages.xml 登记 图片ID ↔ 文件 映射，
+    // 单元格里只放 DISPIMG("ID_xxx",1) 公式，WPS 打开时把图片渲染在格子内部
+    var cellimages = "", cellimagesRels = "";
+    if(media.length){
+      cellimages = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<etc:cellImages xmlns:etc="http://www.wps.cn/officeDocument/2017/etCustomData"' +
+        ' xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing"' +
+        ' xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"' +
+        ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+        media.map(function(m, ix){
+          return '<etc:cellImage name="' + m.id + '">' +
+            '<xdr:pic>' +
+            '<xdr:nvPicPr><xdr:cNvPr id="' + (ix + 1) + '" name="' + m.id + '"/><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr>' +
+            '<xdr:blipFill><a:blip r:embed="rId' + (ix + 1) + '"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill>' +
+            '<xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + Math.max(1, m.w) * 9525 + '" cy="' + Math.max(1, m.h) * 9525 + '"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr>' +
+            '</xdr:pic>' +
+            '</etc:cellImage>';
+        }).join("") + '</etc:cellImages>';
+      cellimagesRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        media.map(function(m, ix){
+          return '<Relationship Id="rId' + (ix + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/' + m.name + '"/>';
+        }).join("") + '</Relationships>';
+    }
+
+    var contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+      '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+      '<Default Extension="xml" ContentType="application/xml"/>' +
+      '<Default Extension="png" ContentType="image/png"/>' +
+      '<Default Extension="jpeg" ContentType="image/jpeg"/>' +
+      '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+      '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' +
+      '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' +
+      (media.length ? '<Override PartName="/xl/cellimages.xml" ContentType="application/vnd.wps-officedocument.cellimage+xml"/>' : '') +
+      '</Types>';
+
+    var rootRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>' +
+      '</Relationships>';
+
+    var workbook = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+      '<sheets><sheet name="艺账" sheetId="1" r:id="rId1"/></sheets></workbook>';
+
+    var wbRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>' +
+      '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+      (media.length ? '<Relationship Id="rId3" Type="http://www.wps.cn/officeDocument/2020/cellImage" Target="cellimages.xml"/>' : '') +
+      '</Relationships>';
+
+    var styles = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+      '<numFmts count="2">' +
+      '<numFmt numFmtId="176" formatCode="&quot;\uFFE5&quot;#,##0.00"/>' +
+      '<numFmt numFmtId="177" formatCode="yyyy&quot;\u5E74&quot;m&quot;\u6708&quot;d&quot;\u65E5&quot;"/>' +
+      '</numFmts>' +
+      '<fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts>' +
+      '<fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE8F0FE"/></patternFill></fill></fills>' +
+      '<borders count="1"><border/></borders>' +
+      '<cellStyleXfs count="1"><xf/></cellStyleXfs>' +
+      '<cellXfs count="5">' +
+      '<xf xfId="0" applyAlignment="1"><alignment vertical="center"/></xf>' +
+      '<xf xfId="0" fontId="1" fillId="2" applyFont="1" applyFill="1" applyAlignment="1"><alignment vertical="center" horizontal="center"/></xf>' +
+      '<xf xfId="0" fontId="1" applyFont="1" applyAlignment="1"><alignment vertical="center"/></xf>' +
+      '<xf xfId="0" numFmtId="176" applyNumberFormat="1" applyAlignment="1"><alignment vertical="center"/></xf>' +
+      '<xf xfId="0" numFmtId="177" applyNumberFormat="1" applyAlignment="1"><alignment vertical="center"/></xf>' +
+      '</cellXfs>' +
+      '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>' +
+      '</styleSheet>';
+
+    var enc = new TextEncoder();
+    var files = [
+      { name: "[Content_Types].xml", data: enc.encode(contentTypes) },
+      { name: "_rels/.rels", data: enc.encode(rootRels) },
+      { name: "xl/workbook.xml", data: enc.encode(workbook) },
+      { name: "xl/_rels/workbook.xml.rels", data: enc.encode(wbRels) },
+      { name: "xl/styles.xml", data: enc.encode(styles) },
+      { name: "xl/worksheets/sheet1.xml", data: enc.encode(sheet1) }
+    ];
+    if(media.length){
+      files.push({ name: "xl/cellimages.xml", data: enc.encode(cellimages) });
+      files.push({ name: "xl/_rels/cellimages.xml.rels", data: enc.encode(cellimagesRels) });
+      media.forEach(function(m){ files.push({ name: "xl/media/" + m.name, data: m.data }); });
+    }
+    return zipStore(files);
+  }
+
+  function downloadBlob(bytesOrBlob, mime, fname){
+    var blob = bytesOrBlob instanceof Blob ? bytesOrBlob : new Blob([bytesOrBlob], {type: mime});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = fname;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+  }
+
+  function rangeFname(prefix, ext){
+    return prefix + "_" + (range.from || "全部").replace(/-/g,"") +
+      (range.to ? "-" + range.to.replace(/-/g,"") : "") + ext;
+  }
+
+  // 时间段内按时间正序（和 Excel 导出一致的阅读顺序）
+  function listInRangeAsc(){
+    return entries.filter(inRange).sort(function(a, b){
+      if(a.date !== b.date) return a.date > b.date ? 1 : -1;
+      return a.createdAt - b.createdAt;
+    });
+  }
+
+  function exportExcelX(){
+    var btn = $("exportXBtn");
+    var list = listInRangeAsc();
+    if(list.length === 0){
+      btn.disabled = true; btn.textContent = "这个时间段没有账，无法导出";
+      setTimeout(function(){ btn.disabled = false; btn.textContent = "🖼 Excel 含截图"; }, 1800);
+      return;
+    }
+    btn.disabled = true; btn.textContent = "正在处理截图…";
+    Promise.all(list.map(function(e){
+      if(!e.shot) return Promise.resolve(e);
+      return makeCellShot(e.shot).then(function(t){
+        return { id: e.id, category: e.category, date: e.date, item: e.item, amount: e.amount, shot: t };
+      });
+    })).then(function(rows){
+      var bytes = buildXlsx(rows);
+      var fname = rangeFname("艺账", ".xlsx");
+      deliver(fname, bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet").then(function(msg){
+        btn.disabled = false;
+        btn.textContent = msg;
+        setTimeout(function(){ btn.textContent = "🖼 Excel 含截图"; }, 2600);
+      });
+    }).catch(function(err){
+      btn.disabled = false;
+      btn.textContent = "导出失败，稍后再试";
+      setTimeout(function(){ btn.textContent = "🖼 Excel 含截图"; }, 3000);
+    });
+  }
+
+  function stitchCollage(){
+    var btn = $("collageBtn");
+    var list = listInRangeAsc().filter(function(e){ return !!e.shot; });
+    if(list.length === 0){
+      btn.disabled = true; btn.textContent = "这个时间段没有截图可拼";
+      setTimeout(function(){ btn.disabled = false; btn.textContent = "🧩 拼长图"; }, 1800);
+      return;
+    }
+    btn.disabled = true; btn.textContent = "正在拼接…";
+    var W = 720, PAD = 14, LABEL_H = 36, GAP = 10;
+    Promise.all(list.map(function(e){ return loadImg(e.shot).then(function(im){ return {e: e, im: im}; }); }))
+    .then(function(items){
+      var scaled = items.map(function(it){
+        var w = W - PAD * 2;
+        var h = Math.max(1, Math.round(it.im.naturalHeight * w / it.im.naturalWidth));
+        return { e: it.e, im: it.im, h: h };
+      });
+      var H = PAD + scaled.reduce(function(s, x){ return s + LABEL_H + x.h + GAP; }, 0) - GAP + PAD;
+      if(H > 30000){   // 浏览器画布有最大高度限制，超出就让用户缩小时间段
+        throw new Error("截图太多，长图超过画布上限，请缩小时间段分批拼");
+      }
+      var c = document.createElement("canvas");
+      c.width = W; c.height = H;
+      var ctx = c.getContext("2d");
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, W, H);
+      var y = PAD;
+      scaled.forEach(function(x){
+        var lh = LABEL_H - 6;
+        ctx.fillStyle = "#e8f0fe";
+        ctx.fillRect(PAD, y, W - PAD * 2, lh);
+        ctx.fillStyle = "#1e293b";
+        ctx.font = "600 14px 'Microsoft YaHei', sans-serif";
+        ctx.textBaseline = "middle";
+        ctx.textAlign = "left";
+        ctx.fillText(x.e.category + " · " + x.e.item + " · " + fmtDateCN(x.e.date), PAD + 10, y + lh / 2);
+        ctx.textAlign = "right";
+        ctx.fillText("￥" + money(x.e.amount), W - PAD - 10, y + lh / 2);
+        ctx.textAlign = "left";
+        y += LABEL_H;
+        ctx.drawImage(x.im, PAD, y, W - PAD * 2, x.h);
+        y += x.h + GAP;
+      });
+      var fname = rangeFname("艺账拼图", ".png");
+      deliver(fname, dataUrlToU8(c.toDataURL("image/png")), "image/png").then(function(msg){
+        btn.disabled = false;
+        btn.textContent = msg;
+        setTimeout(function(){ btn.textContent = "🧩 拼长图"; }, 2600);
+      });
+    }).catch(function(err){
+      btn.disabled = false;
+      btn.textContent = err && err.message ? err.message : "拼接失败，稍后再试";
+      setTimeout(function(){ btn.textContent = "🧩 拼长图"; }, 3000);
+    });
+  }
+
+  /* ================= 事件 ================= */
+  document.querySelectorAll(".quick button").forEach(function(b){
+    b.addEventListener("click", function(){ setQuick(b.dataset.q); });
+  });
+  $("fromDate").addEventListener("change", function(){
+    range.from = this.value || null; refreshQuickBtns(""); render();
+  });
+  $("toDate").addEventListener("change", function(){
+    range.to = this.value || null; refreshQuickBtns(""); render();
+  });
+  $("pickBtn").addEventListener("click", function(){ $("fShot").click(); });
+  $("fShot").addEventListener("change", function(){ pickFiles(this.files); });
+  $("clearShot").addEventListener("click", function(){
+    pendingShot = null; pendingShotsList = []; $("fShot").value = ""; updateShotUI();
+  });
+  $("saveBtn").addEventListener("click", saveCurrent);
+  $("fAmt").addEventListener("keydown", function(e){ if(e.key === "Enter") saveCurrent(); });
+  $("fItem").addEventListener("keydown", function(e){ if(e.key === "Enter") saveCurrent(); });
+  $("exportBtn").addEventListener("click", exportExcel);
+  $("exportXBtn").addEventListener("click", exportExcelX);
+  $("collageBtn").addEventListener("click", stitchCollage);
+  $("folderBtn").addEventListener("click", pickExportFolder);
+  $("restoreBtn").addEventListener("click", restoreFromBackup);
+
+  /* ================= 原地编辑 =================
+     不用 prompt/confirm 弹窗——预览面板和手机上都会把弹窗拦掉。
+     做法：把点击的元素原地换成一个输入框，回车或点别处保存。 */
+  function inlineEdit(anchor, current, onCommit){
+    var input = document.createElement("input");
+    input.className = "inline-edit";
+    input.value = current;
+    anchor.replaceWith(input);
+    input.focus(); input.select();
+    var finished = false;
+    function finish(save){
+      if(finished) return;
+      finished = true;
+      onCommit(save ? input.value.trim() : null);
+    }
+    input.addEventListener("keydown", function(e){
+      if(e.key === "Enter") finish(true);
+      else if(e.key === "Escape") finish(false);
+    });
+    input.addEventListener("blur", function(){ finish(true); });
+  }
+
+  // 删除改为「两段式」：第一次点变成「确认删除」，3 秒内再点才真删
+  function handleDelete(btn){
+    var e1 = entries.find(function(x){ return x.id === btn.dataset.id; });
+    if(!e1) return;
+    if(btn.classList.contains("armed")){
+      txDelete(e1.id).then(function(){
+        entries = entries.filter(function(x){ return x.id !== e1.id; });
+        render();
+        backupEntries();
+      });
+    } else {
+      btn.classList.add("armed");
+      btn.textContent = "确认删除";
+      setTimeout(function(){
+        if(btn.isConnected){ btn.classList.remove("armed"); btn.textContent = "✕"; }
+      }, 3000);
+    }
+  }
+
+  // 列表上的代理事件：看大图 / 折叠分支 / 改名 / 归类 / 删除
+  $("list").addEventListener("click", function(ev){
+    var t = ev.target;
+    if(t.classList.contains("thumb")){
+      $("lightboxImg").src = t.src;
+      $("lightbox").style.display = "flex";
+      return;
+    }
+    if(t.classList.contains("gcaret") && t.dataset.cat){
+      var cp = t.dataset.cat;
+      if(collapsedSet[cp]) delete collapsedSet[cp];
+      else collapsedSet[cp] = true;
+      saveCollapsed();
+      render();
+      return;
+    }
+    if(t.classList.contains("del")){
+      handleDelete(t);
+      return;
+    }
+    if(t.classList.contains("name")){
+      var e2 = entries.find(function(x){ return x.id === t.dataset.id; });
+      if(e2){
+        inlineEdit(t, e2.item, function(v){
+          if(v && v !== e2.item){ e2.item = v; txPut(e2).then(function(){ render(); backupEntries(); }); }
+          else render();
+        });
+      }
+      return;
+    }
+    if(t.classList.contains("mv")){
+      var e3 = entries.find(function(x){ return x.id === t.dataset.id; });
+      if(e3){
+        var inp = document.createElement("input");
+        inp.className = "inline-edit";
+        inp.value = e3.category;
+        inp.setAttribute("list", "catList");
+        inp.placeholder = "品类/子类，如 餐饮/水果";
+        t.replaceWith(inp);
+        inp.focus(); inp.select();
+        var done3 = false;
+        function commit3(save){
+          if(done3) return; done3 = true;
+          var v = save ? normalizeCat(inp.value) : null;
+          if(v){ e3.category = v; txPut(e3).then(function(){ render(); backupEntries(); }); }
+          else render();
+        }
+        inp.addEventListener("keydown", function(e){
+          if(e.key === "Enter") commit3(true);
+          else if(e.key === "Escape") commit3(false);
+        });
+        inp.addEventListener("blur", function(){ commit3(true); });
+      }
+      return;
+    }
+    if(t.classList.contains("cat-name")){
+      // 改的是「这一级」的名字：old 是完整路径，只换最后一段，
+      // 下面的子分支前缀整体跟着走（如 餐饮/水果 → 吃饭/水果）
+      var old = t.dataset.cat;
+      var oldLeaf = old.split("/").pop();
+      inlineEdit(t, oldLeaf, function(v){
+        var nn = normalizeCat(v);
+        if(nn && nn !== oldLeaf){
+          var parent = old.split("/").slice(0, -1).join("/");
+          var newPath = parent ? parent + "/" + nn : nn;
+          var affected = entries.filter(function(e){
+            return e.category === old || e.category.indexOf(old + "/") === 0;
+          });
+          Promise.all(affected.map(function(e){
+            e.category = newPath + e.category.slice(old.length);
+            return txPut(e);
+          })).then(function(){ render(); backupEntries(); });
+        }
+        else render();
+      });
+    }
+  });
+  $("lightbox").addEventListener("click", function(){
+    this.style.display = "none"; $("lightboxImg").src = "";
+  });
+
+  /* ================= 三主题切换 =================
+     右上角小圆钮，点一下换一个：亮色 ☀ → 暗色 ☾ → 春天 ❀。
+     选好记在 localStorage，下次打开自动恢复。
+     颜色过渡靠 CSS 变量 + transition，换的时候是渐变不是跳变。 */
+  var THEMES = [
+    { id: "light",  icon: "☀", name: "白蓝款" },
+    { id: "dark",   icon: "☾", name: "黑白款" },
+    { id: "spring", icon: "❀", name: "春天版" }
+  ];
+  var themeIdx = 0;
+  function applyTheme(){
+    var t = THEMES[themeIdx];
+    document.documentElement.setAttribute("data-theme", t.id);
+    var b = $("themeBtn");
+    b.textContent = t.icon;
+    b.title = "主题：" + t.name + "（点一下换下一个）";
+    try{ localStorage.setItem("yizhang-theme", t.id); }catch(e){}
+  }
+  (function initTheme(){
+    var saved = null;
+    try{ saved = localStorage.getItem("yizhang-theme"); }catch(e){}
+    THEMES.forEach(function(t, i){ if(t.id === saved) themeIdx = i; });
+    applyTheme();
+  })();
+  $("themeBtn").addEventListener("click", function(){
+    themeIdx = (themeIdx + 1) % THEMES.length;
+    applyTheme();
+  });
+
+  /* ================= 启动 ================= */
+  $("fDate").value = todayStr();
+  setQuick("month");
+  if(HAS_FSA){
+    loadDirHandle().then(function(h){ dirHandle = h; updateFolderUI(); }).catch(updateFolderUI);
+  } else {
+    updateFolderUI();
+  }
+  txAll().then(function(list){
+    entries = list;
+    render();
+  }).catch(function(err){
+    $("list").innerHTML = "<div class='card'><div class='empty'>数据加载失败：" + esc(String(err)) + "</div></div>";
+  });
+})();
+</script>
 </body>
 </html>
