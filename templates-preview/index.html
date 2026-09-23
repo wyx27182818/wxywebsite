@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>导出模板 · 艺账</title>
+<style>
+  :root{
+    --bg:#f5f7fa; --card:#ffffff; --ink:#1e293b; --ink-2:#64748b;
+    --line:#e3e9f2; --line-soft:#eef2f7; --accent:#2563eb; --accent-deep:#1e40af;
+    --accent-soft:#e8f0fe;
+    --shadow:0 1px 2px rgba(30,41,59,.04),0 4px 14px rgba(30,41,59,.05);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    line-height:1.6;padding:28px 18px 72px;-webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:720px;margin:0 auto}
+  header{margin-bottom:22px}
+  h1{font-size:20px;margin:0 0 6px;font-weight:700;letter-spacing:1px}
+  .sub{color:var(--ink-2);font-size:13px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;min-height:186px}
+  .state{
+    margin-top:18px;border:1px dashed var(--line);border-radius:12px;
+    padding:24px;text-align:center;color:var(--ink-2);font-size:13px;background:var(--card);
+  }
+  .state .retry{
+    margin-top:12px;border:1px solid var(--line);background:#fff;color:var(--accent);
+    font-size:12px;border-radius:999px;padding:4px 14px;cursor:pointer;
+  }
+  /* ---- 卡片 ---- */
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px;
+    cursor:pointer;transition:border-color .15s,box-shadow .15s;
+  }
+  .card:hover{border-color:#c7d7f5}
+  .card h3{margin:0;font-size:14px}
+  .card .desc{margin:0;color:var(--ink-2);font-size:12px}
+  .cols{display:flex;flex-wrap:wrap;gap:6px}
+  .cols span{background:var(--accent-soft);color:var(--accent-deep);font-size:11px;padding:2px 7px;border-radius:999px}
+  .sample{
+    margin:0;border-top:1px solid var(--line);padding-top:9px;
+    display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--ink-2);
+  }
+  .sample b{color:var(--ink);font-variant-numeric:tabular-nums}
+  .card .use{
+    margin-top:auto;align-self:flex-start;border:1px solid var(--line);background:#fff;
+    color:var(--ink-2);font-size:12px;border-radius:999px;padding:4px 12px;cursor:pointer;
+    transition:color .15s,border-color .15s,background .15s;
+  }
+  .card.picked{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .card.picked .use{background:var(--accent);border-color:var(--accent);color:#fff}
+  /* ---- 加载中的骨架块 ---- */
+  .sk{border:1px solid var(--line);background:var(--line-soft);border-radius:14px;min-height:158px}
+  @media (prefers-reduced-motion: no-preference){
+    .sk{animation:pulse 1.3s ease-in-out infinite}
+    @keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+  }
+  /* ---- 四态切换条（低调） ---- */
+  .statebar{display:flex;justify-content:center;gap:16px;margin-top:30px;font-size:12px}
+  .statebar button{
+    border:none;background:none;color:#94a3b8;cursor:pointer;
+    padding:2px 4px;opacity:.5;transition:opacity .15s,color .15s;
+  }
+  .statebar button:hover{opacity:1}
+  .statebar button.on{color:var(--accent);opacity:1}
+  footer{text-align:center;color:#94a3b8;font-size:12px;margin-top:22px}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>导出模板</h1>
+      <span class="sub">选一套模板，导出的 Excel 就按它的格式生成</span>
+    </header>
+
+    <div class="grid" id="cardGrid"></div>
+    <div class="state" id="stateBox" style="display:none"></div>
+
+    <div class="statebar" id="stateBar"></div>
+    <footer>艺账 · 导出模板页原型（Day 8 练习 · 假数据）</footer>
+  </div>
+
+<script>
+  /* ============ 1. 假数据：以后换成真实的模板列表 ============ */
+  var MOCK_TEMPLATES = [
+    { id:"xiaoyi", name:"小艺资金表版", desc:"跟你的资金表一模一样，默认选它",
+      cols:["品类","时间","购买物资","金额","截图","总金额"], label:"9月 32 笔", amount:"￥3,860.00" },
+    { id:"bycat",  name:"按品类分页版", desc:"一个品类一页，跟翻页习惯一致",
+      cols:["品类","时间","购买物资","金额","截图"], label:"9 个品类页", amount:"￥3,860.00" },
+    { id:"mini",   name:"极简金额版", desc:"只要日期和金额，快速对账用",
+      cols:["时间","金额"], label:"9月 32 笔", amount:"￥3,860.00" },
+    { id:"noshot", name:"不含截图版", desc:"文件小，方便发给别人看",
+      cols:["品类","时间","购买物资","金额"], label:"文件约 12 KB", amount:"￥3,860.00" },
+    { id:"month",  name:"月汇总版", desc:"一行一个月，看长期趋势",
+      cols:["月份","笔数","金额合计","日均"], label:"近 3 个月", amount:"￥3,860.00" },
+    { id:"tree",   name:"分支明细版", desc:"带品类层级路径的明细",
+      cols:["品类路径","时间","金额"], label:"9月 32 笔", amount:"￥3,860.00" }
+  ];
+
+  /* ============ 2. 可复用渲染函数（余力加练：卡片组件雏形） ============ */
+  function templateCard(t, pickedId){
+    return '<div class="card' + (t.id === pickedId ? ' picked' : '') + '" data-id="' + t.id + '">' +
+      '<h3>' + t.name + '</h3>' +
+      '<p class="desc">' + t.desc + '</p>' +
+      '<div class="cols">' + t.cols.map(function(c){ return '<span>' + c + '</span>'; }).join('') + '</div>' +
+      '<p class="sample"><span>' + t.label + '</span><b>' + t.amount + '</b></p>' +
+      '<button class="use">' + (t.id === pickedId ? '已选 ✓' : '用这套') + '</button>' +
+    '</div>';
+  }
+  function skeletonBlocks(n){
+    var s = '';
+    for(var i = 0; i < n; i++) s += '<div class="sk"></div>';
+    return s;
+  }
+
+  /* ============ 3. 四种状态 ============ */
+  var grid = document.getElementById("cardGrid");
+  var stateBox = document.getElementById("stateBox");
+  var stateBar = document.getElementById("stateBar");
+  var pickedId = "xiaoyi";
+  var current = "loading";
+
+  var STATES = [
+    { id:"loading", name:"加载中" },
+    { id:"data",    name:"有数据" },
+    { id:"empty",   name:"空" },
+    { id:"error",   name:"出错" }
+  ];
+
+  function showState(name){
+    current = name;
+    stateBar.innerHTML = STATES.map(function(s){
+      return '<button data-state="' + s.id + '" class="' + (s.id === name ? 'on' : '') + '">' + s.name + '</button>';
+    }).join("");
+
+    if(name === "loading"){
+      stateBox.style.display = "none";
+      grid.style.display = "grid";
+      grid.innerHTML = skeletonBlocks(4);
+      return;
+    }
+    if(name === "data"){
+      stateBox.style.display = "none";
+      grid.style.display = "grid";
+      grid.innerHTML = MOCK_TEMPLATES.map(function(t){ return templateCard(t, pickedId); }).join("");
+      return;
+    }
+    grid.style.display = "none";
+    stateBox.style.display = "block";
+    if(name === "empty"){
+      stateBox.innerHTML = "还没有可用的模板。以后你可以在艺账里自己加模板。";
+    } else {
+      stateBox.innerHTML = "模板加载失败了。" +
+        '<br><sub>（这是故意造出来的：网络断了、或者文件读坏了，就会看到它）</sub>' +
+        '<br><button class="retry" id="retryBtn">重试</button>';
+    }
+  }
+
+  /* ============ 4. 假装去取数据：有延迟、可能会失败 ============ */
+  function fetchTemplates(willFail){
+    return new Promise(function(resolve, reject){
+      setTimeout(function(){
+        if(willFail) reject(new Error("mock 网络错误"));
+        else resolve(MOCK_TEMPLATES);
+      }, 900);
+    });
+  }
+  function load(willFail){
+    showState("loading");
+    fetchTemplates(willFail).then(function(){
+      showState("data");
+    }).catch(function(){
+      showState("error");
+    });
+  }
+
+  /* ============ 5. 交互 ============ */
+  stateBar.addEventListener("click", function(ev){
+    var b = ev.target.closest("button");
+    if(!b) return;
+    var s = b.dataset.state;
+    if(s === "loading") load(false);
+    else if(s === "error") load(true);
+    else showState(s);
+  });
+  grid.addEventListener("click", function(ev){
+    var card = ev.target.closest(".card");
+    if(!card) return;
+    pickedId = card.dataset.id === pickedId ? null : card.dataset.id;
+    showState("data");
+  });
+  stateBox.addEventListener("click", function(ev){
+    if(ev.target.id === "retryBtn") load(false);
+  });
+
+  load(false);
+</script>
+</body>
+</html>
