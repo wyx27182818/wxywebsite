@@ -10,7 +10,7 @@
     --bg-top:#fbfdff;
     --card:#ffffff;
     --ink:#1e293b;
-    --ink-2:#7d8aa3;
+    --ink-2:#64748b;
     --line:#e3e9f2;
     --line-soft:#eef2f8;
     --accent:#2563eb;
@@ -26,9 +26,9 @@
     --ph:#b6c2d4;
     --row-hover:#f6f9fd;
     --pick-border:#cbd8ea;
-    --hint:#94a3b8;
-    --del:#cbd5e1;
-    --footer:#9aa8bd;
+    --hint:#64748b;
+    --del:#8494ab;
+    --footer:#64748b;
     --shadow:0 1px 2px rgba(30,60,120,.05),0 4px 14px rgba(30,60,120,.06);
   }
   /* ---- 三主题：白蓝款（默认）/ 黑白款 / 春天版 ----
@@ -51,7 +51,7 @@
   html[data-theme="spring"]{
     --bg:#edf3ea; --bg-top:#f4f8f0;
     --card:#fdfffc;
-    --ink:#233123; --ink-2:#77876f;
+    --ink:#233123; --ink-2:#5c6d55;
     --line:#d9e4d3; --line-soft:#e7efe2;
     --accent:#3f7d4e; --accent-deep:#2f6340; --accent-soft:#e6f1e3;
     --save-grad-a:#57975f;
@@ -60,7 +60,7 @@
     --danger:#bb4d44; --ok:#2e7d4f;
     --input-bg:#f5f9f2; --ph:#aebfa6;
     --row-hover:#f3f8ef; --pick-border:#c4d6bd;
-    --hint:#8ca084; --del:#bcccb6; --footer:#93a48c;
+    --hint:#66795e; --del:#7f937a; --footer:#5f7057;
     --shadow:0 1px 2px rgba(45,80,40,.05),0 4px 14px rgba(45,80,40,.07);
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -116,7 +116,7 @@
     font-variant-numeric:tabular-nums;color:var(--ink);
   }
   .total-num .rmb{font-size:20px;color:var(--accent);margin-right:6px;font-weight:700}
-  .total-meta{color:var(--ink-2);font-size:13px;margin-top:2px}
+  .total-meta{color:var(--ink-2);font-size:13px;margin-top:4px}
   .export-btn{
     margin-top:14px;margin-right:8px;border:1px solid var(--line);background:var(--card);color:var(--accent-deep);
     border-radius:10px;padding:8px 15px;font-size:13px;cursor:pointer;font-weight:600;
@@ -125,7 +125,7 @@
   .export-btn:hover{background:var(--accent-soft);border-color:var(--accent)}
   .export-btn:active{transform:translateY(1px)}
   .export-btn:disabled{opacity:.4;cursor:not-allowed}
-  .folder-row{display:flex;align-items:center;gap:10px;margin-top:6px;flex-wrap:wrap;font-size:12px;color:var(--ink-2)}
+  .folder-row{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap;font-size:12px;color:var(--ink-2)}
   .folder-row .export-btn{margin-top:6px;padding:5px 12px;font-size:12px;font-weight:500;color:var(--ink-2)}
   .folder-row .export-btn:hover{color:var(--accent-deep)}
   .folder-row #folderInfo{max-width:100%}
@@ -168,11 +168,11 @@
   .group{margin-bottom:14px;padding:14px 16px}
   .group-head{
     display:flex;align-items:center;gap:10px;
-    padding:10px 12px;border-radius:12px;background:var(--accent-soft);margin-bottom:4px;
+    padding:10px 12px;border-radius:12px;background:var(--accent-soft);margin-bottom:8px;
   }
-  .group-head .cat{font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px}
+  .group-head .cat{font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px;min-width:0}
   .group-head .cat::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent);flex:none}
-  .group-head .cat-name{cursor:pointer}
+  .group-head .cat-name{cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .group-head .cat-name:hover{text-decoration:underline dotted}
   .group-head .meta{color:var(--ink-2);font-size:12px;margin-left:auto;font-variant-numeric:tabular-nums}
   /* 树形分类：折叠箭头 + 子级缩进 */
@@ -187,15 +187,15 @@
   .row{
     display:flex;align-items:center;gap:10px;
     padding:10px 12px;border-bottom:1px solid var(--line-soft);
-    border-radius:8px;transition:background .12s;
+    border-radius:10px;transition:background .12s;
   }
   .row:hover{background:var(--row-hover)}
   .row:last-child{border-bottom:none}
-  .row .name{font-size:14px;cursor:pointer}
+  .row .name{font-size:14px;cursor:pointer;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .row .name:hover{text-decoration:underline dotted}
   .row .date{font-size:12px;color:var(--ink-2)}
   .row .amt{margin-left:auto;font-weight:700;font-size:14px;white-space:nowrap;font-variant-numeric:tabular-nums}
-  .row .thumb{height:42px;width:42px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:zoom-in;background:var(--input-bg)}
+  .row .thumb{height:42px;width:42px;object-fit:cover;border-radius:10px;border:1px solid var(--line);cursor:zoom-in;background:var(--input-bg)}
   .row .del{
     border:none;background:none;color:var(--del);cursor:pointer;font-size:15px;line-height:1;padding:2px 5px;
     transition:color .12s;
@@ -205,7 +205,7 @@
   .empty b{color:var(--accent)}
   /* ---- 原地编辑（不用弹窗） ---- */
   .inline-edit{
-    border:1px solid var(--accent);border-radius:8px;padding:4px 9px;font-size:14px;
+    border:1px solid var(--accent);border-radius:10px;padding:4px 9px;font-size:14px;
     background:var(--card);color:var(--ink);width:170px;max-width:55vw;
     box-shadow:0 0 0 3px var(--glow-soft);
   }
@@ -312,7 +312,7 @@ try{
   <!-- 明细列表 -->
   <section id="list"></section>
 
-  <footer>艺账 v0.9.2 · 数据只在你自己的设备上</footer>
+  <footer>艺账 v1.0 · 数据只在你自己的设备上</footer>
 </div>
 
 <div id="lightbox"><img id="lightboxImg" alt=""></div>
