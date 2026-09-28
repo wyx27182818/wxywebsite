@@ -4,8 +4,9 @@
 # 依赖目录（以后装了 Node 依赖会生成）
 node_modules/
 
-# WorkBuddy 的工作数据，不属于网站文件
-.workbuddy/
+# WorkBuddy 的工作数据，不属于网站文件（Day 12 起放行 skills/：Skill 说明书要跟着仓库走）
+.workbuddy/*
+!.workbuddy/skills/
 
 # WorkBuddy 应用发布的本地产物
 .wbapp_*
