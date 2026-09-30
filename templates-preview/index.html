@@ -68,6 +68,30 @@
   .statebar button:hover{opacity:1}
   .statebar button.on{color:var(--accent);opacity:1}
   footer{text-align:center;color:#94a3b8;font-size:12px;margin-top:22px}
+  /* ---- 视图导航（Day 13 哈希路由） ---- */
+  .nav{display:flex;gap:6px;margin:0 0 20px;padding:4px;background:var(--line-soft);border-radius:999px}
+  .nav button{
+    flex:1;border:none;background:none;color:var(--ink-2);cursor:pointer;
+    font-size:13px;padding:7px 10px;border-radius:999px;
+    transition:background .15s,color .15s;
+  }
+  .nav button:hover{color:var(--ink)}
+  .nav button.on{background:var(--card);color:var(--accent);font-weight:500;box-shadow:var(--shadow)}
+  .view{display:none}
+  .view.on{display:block}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:var(--shadow)}
+  .panel h2{margin:0 0 14px;font-size:15px;font-weight:500}
+  .panel .line{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:10px 0;border-top:1px solid var(--line-soft);font-size:13px;
+  }
+  .panel .line:first-of-type{border-top:none}
+  .panel .line span{color:var(--ink-2)}
+  .badge{
+    display:inline-block;background:var(--accent-soft);color:var(--accent-deep);
+    font-size:11px;padding:2px 8px;border-radius:999px;
+  }
+  .note{color:var(--ink-2);font-size:12px;margin:10px 0 0}
 </style>
 </head>
 <body>
@@ -77,11 +101,36 @@
       <span class="sub">选一套模板，导出的 Excel 就按它的格式生成</span>
     </header>
 
-    <div class="grid" id="cardGrid"></div>
-    <div class="state" id="stateBox" style="display:none"></div>
+    <!-- 视图导航：地址栏同步变成 #/library、#/picked、#/settings -->
+    <nav class="nav" id="nav"></nav>
 
+    <!-- 视图 1：模板库 -->
+    <section class="view" id="view-library">
+      <div class="grid" id="cardGrid"></div>
+      <div class="state" id="stateBox" style="display:none"></div>
+    </section>
+
+    <!-- 视图 2：已选模板 -->
+    <section class="view" id="view-picked">
+      <div class="grid" id="pickedGrid"></div>
+      <div class="state" id="pickedStateBox" style="display:none"></div>
+    </section>
+
+    <!-- 视图 3：导出设置（静态展示，不落数据） -->
+    <section class="view" id="view-settings">
+      <div class="panel">
+        <h2>导出设置</h2>
+        <div class="line"><span>时间范围</span><b>2026-09-01 ~ 2026-09-30</b></div>
+        <div class="line"><span>列开关</span><b>品类 · 时间 · 购买物资 · 金额 · 截图 · 总金额</b></div>
+        <div class="line"><span>金额合计</span><b>￥3,860.00</b></div>
+        <div class="line"><span>输出方式</span><b>按《小艺资金表》格式生成 .xlsx</b></div>
+        <p class="note">这一页是静态示意：具体设置项等导出功能接上以后再生效。</p>
+      </div>
+    </section>
+
+    <!-- 四态演示切换条：只在「模板库」视图里出现 -->
     <div class="statebar" id="stateBar"></div>
-    <footer>艺账 · 导出模板页原型（Day 8 练习 · 假数据）</footer>
+    <footer>艺账 · 导出模板页原型（Day 8 练习 · Day 13 加视图切换 · 假数据）</footer>
   </div>
 
 <script>
@@ -121,6 +170,7 @@
   var grid = document.getElementById("cardGrid");
   var stateBox = document.getElementById("stateBox");
   var stateBar = document.getElementById("stateBar");
+  var nav = document.getElementById("nav");
   var pickedId = "xiaoyi";
   var current = "loading";
 
@@ -172,13 +222,105 @@
   function load(willFail){
     showState("loading");
     fetchTemplates(willFail).then(function(){
-      showState("data");
+      /* 取数期间用户可能已经切走了 —— 不在模板库就别写这一屏 */
+      if(currentViewId() === "library") showState("data");
     }).catch(function(){
-      showState("error");
+      if(currentViewId() === "library") showState("error");
     });
   }
 
-  /* ============ 5. 交互 ============ */
+  /* ============ 5. 视图切换：哈希路由（Day 13） ============
+     地址栏 #/xxx 天生不触发整页刷新 —— 单文件也能有"看得见的页面"，
+     刷新停在原视图，浏览器后退键还能用。 */
+  var VIEWS = [
+    { id:"library",  hash:"#/library",  name:"模板库"   },
+    { id:"picked",   hash:"#/picked",   name:"已选模板" },
+    { id:"settings", hash:"#/settings", name:"导出设置" }
+  ];
+  function currentViewId(){
+    var h = location.hash || "";
+    for(var i = 0; i < VIEWS.length; i++){
+      if(h === VIEWS[i].hash) return VIEWS[i].id;
+    }
+    return "library";            // 没写或写错 → 默认模板库
+  }
+  function switchView(id){
+    /* 先清场再渲染：避免上一个视图的内容残留造成"串页" */
+    document.querySelectorAll(".view").forEach(function(sec){
+      sec.classList.toggle("on", sec.id === "view-" + id);
+    });
+    nav.innerHTML = VIEWS.map(function(v){
+      return '<button data-view="' + v.id + '" class="' + (v.id === id ? 'on' : '') + '">' + v.name + '</button>';
+    }).join("");
+    stateBar.style.display = (id === "library") ? "flex" : "none";
+    if(id === "library") showState(current === "loading" ? "data" : current);
+    if(id === "picked") loadPicked(false);
+  }
+  nav.addEventListener("click", function(ev){
+    var b = ev.target.closest("button");
+    if(b) location.hash = VIEWS.filter(function(v){ return v.id === b.dataset.view; })[0].hash;
+  });
+  window.addEventListener("hashchange", function(){ switchView(currentViewId()); });
+
+  /* 已选视图的四态：跟模板库一样走异步取数，所以加载/出错都能真实看到 */
+  var pickedGrid = document.getElementById("pickedGrid");
+  var pickedStateBox = document.getElementById("pickedStateBox");
+  var pickedBar = null;                     // 下面动态插进「已选」视图的演示条
+  var PICKED_STATES = [
+    { id:"loading", name:"加载中" },
+    { id:"data",    name:"有数据" },
+    { id:"empty",   name:"空"     },
+    { id:"error",   name:"出错"   }
+  ];
+
+  function showPickedState(name){
+    if(pickedBar){
+      pickedBar.innerHTML = PICKED_STATES.map(function(s){
+        return '<button data-pstate="' + s.id + '" class="' + (s.id === name ? 'on' : '') + '">' + s.name + '</button>';
+      }).join("");
+    }
+    if(name === "loading"){
+      pickedStateBox.style.display = "none";
+      pickedGrid.style.display = "grid";
+      pickedGrid.innerHTML = skeletonBlocks(2);
+      return;
+    }
+    if(name === "error"){
+      pickedGrid.style.display = "none";
+      pickedStateBox.style.display = "block";
+      pickedStateBox.innerHTML = "已选模板读取失败了。" +
+        '<br><sub>（同样是故意造出来的，看它长什么样、能不能救回来）</sub>' +
+        '<br><button class="retry" id="pickedRetryBtn">重试</button>';
+      return;
+    }
+    var picked = MOCK_TEMPLATES.filter(function(t){ return t.id === pickedId; });
+    if(picked.length){
+      pickedStateBox.style.display = "none";
+      pickedGrid.style.display = "grid";
+      pickedGrid.innerHTML = picked.map(function(t){ return templateCard(t, pickedId); }).join("");
+    } else {
+      pickedGrid.style.display = "none";
+      pickedStateBox.style.display = "block";
+      pickedStateBox.innerHTML = "还没选模板。<b>回「模板库」挑一套吧。</b>";
+    }
+  }
+
+  /* 在「已选」视图里插入一条和模板库同款的四态演示条 */
+  (function(){
+    var box = document.getElementById("view-picked");
+    if(box){ pickedBar = document.createElement("div"); pickedBar.className = "statebar"; box.appendChild(pickedBar); }
+  })();
+
+  /* 已选视图：和模板库一样，先转一会儿再出结果——加载态才是真的在加载 */
+  function loadPicked(willFail){
+    showPickedState("loading");
+    setTimeout(function(){
+      if(currentViewId() !== "picked") return;   // 人已切走，别动这一屏
+      showPickedState(willFail ? "error" : "data");
+    }, 600);
+  }
+
+  /* ============ 6. 交互 ============ */
   stateBar.addEventListener("click", function(ev){
     var b = ev.target.closest("button");
     if(!b) return;
@@ -187,17 +329,31 @@
     else if(s === "error") load(true);
     else showState(s);
   });
+  /* 「已选」视图自己的演示条 */
+  document.addEventListener("click", function(ev){
+    var b = ev.target.closest("button[data-pstate]");
+    if(!b) return;
+    var s = b.dataset.pstate;
+    if(s === "loading") loadPicked(false);
+    else if(s === "error") loadPicked(true);
+    else showPickedState(s);
+  });
   grid.addEventListener("click", function(ev){
     var card = ev.target.closest(".card");
     if(!card) return;
     pickedId = card.dataset.id === pickedId ? null : card.dataset.id;
     showState("data");
+    /* 选择变了，「已选」视图也要跟着变——不然切过去看到的是旧内容 */
+    if(currentViewId() === "picked") showPickedState("data");
   });
   stateBox.addEventListener("click", function(ev){
     if(ev.target.id === "retryBtn") load(false);
   });
+  document.addEventListener("click", function(ev){
+    if(ev.target.id === "pickedRetryBtn") loadPicked(false);
+  });
 
-  load(false);
+  switchView(currentViewId());
 </script>
 </body>
 </html>
