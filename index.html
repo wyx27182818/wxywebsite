@@ -154,6 +154,17 @@
   .thumb-mini{height:48px;border-radius:10px;border:1px solid var(--line);display:block}
   .shot-row .clear-shot{border:none;background:none;color:var(--ink-2);cursor:pointer;font-size:12px;text-decoration:underline}
   .shot-row .clear-shot:hover{color:var(--danger)}
+  /* ---- 拖拽加截图：松手前先把落点画出来，免得拖歪 ---- */
+  #dropMask{
+    display:none;position:fixed;inset:0;z-index:60;padding:24px;
+    background:rgba(20,15,10,.55);align-items:center;justify-content:center;
+  }
+  #dropMask.on{display:flex}
+  #dropMask .drop-inner{
+    border:2px dashed rgba(255,255,255,.9);border-radius:16px;padding:28px 40px;
+    color:#fff;font-size:15px;text-align:center;line-height:1.7;
+  }
+  #dropMask .drop-inner small{display:block;font-size:12px;opacity:.75;margin-top:4px}
   .save-btn{
     margin-top:14px;width:100%;border:none;border-radius:12px;
     background:linear-gradient(135deg,var(--save-grad-a),var(--accent));
@@ -309,7 +320,7 @@ try{
       <button id="clearShot" class="clear-shot" style="display:none">移除截图</button>
     </div>
     <button class="save-btn" id="saveBtn">记一笔</button>
-    <div class="hint">名字可留空：品类空 → 未分类，物资空 → 自动起名。截图可连加多张，自动拼一张。品类用 / 分级，如「餐饮/水果」。</div>
+    <div class="hint">名字可留空：品类空 → 未分类，物资空 → 自动起名。截图可点按钮选、从微信拖进来、或按 Ctrl+V 粘贴，多张自动拼一张。品类用 / 分级，如「餐饮/水果」。</div>
   </section>
 
   <!-- 明细列表 -->
@@ -317,6 +328,8 @@ try{
 
   <footer>艺账 v1.0 · 数据只在你自己的设备上</footer>
 </div>
+
+<div id="dropMask"><div class="drop-inner">松手，加到截图里<small>可以多张，会自动拼成一张</small></div></div>
 
 <div id="lightbox"><img id="lightboxImg" alt=""></div>
 
@@ -601,17 +614,37 @@ try{
       return c.toDataURL("image/jpeg", 0.82);
     });
   }
+  // 扩展名和系统给的类型都不可信（微信拖出来的可能是加密 .dat），再看一眼文件头字节
+  function sniffImage(file){
+    if(file.type && file.type.indexOf("image/") === 0) return Promise.resolve(true);
+    if(!file.slice) return Promise.resolve(true);
+    return file.slice(0, 12).arrayBuffer().then(function(buf){
+      var b = new Uint8Array(buf);
+      var jpg  = b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF;
+      var png  = b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47;
+      var gif  = b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46;
+      var bmp  = b[0] === 0x42 && b[1] === 0x4D;
+      var webp = b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 &&
+                 b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50;
+      return jpg || png || gif || bmp || webp;
+    }).catch(function(){ return true; });   // 读不出来就放行，交给后面的读取环节报错
+  }
   function pickFiles(files){
     var arr = Array.prototype.slice.call(files || []);
     if(arr.length === 0) return;
     $("pickBtn").textContent = "正在读取 " + arr.length + " 张截图…";
-    Promise.all(arr.map(readFileAsDataURL)).then(function(urls){
-      pendingShotsList = pendingShotsList.concat(urls);   // 增量追加
-      return restitchPending();
-    }).catch(function(err){
-      $("pickBtn").textContent = (err && err.message) ? err.message : "截图读取失败，请重试";
-      setTimeout(updateShotUI, 2600);
-    });
+    Promise.all(arr.map(function(f){ return sniffImage(f).then(function(ok){ return ok ? f : null; }); }))
+      .then(function(list){
+        var good = list.filter(Boolean);
+        if(good.length === 0) throw new Error("不是图片文件，请改用 Ctrl+V 粘贴");
+        return Promise.all(good.map(readFileAsDataURL)).then(function(urls){
+          pendingShotsList = pendingShotsList.concat(urls);   // 增量追加
+          return restitchPending();
+        });
+      }).catch(function(err){
+        $("pickBtn").textContent = (err && err.message) ? err.message : "截图读取失败，请重试";
+        setTimeout(updateShotUI, 2600);
+      });
   }
   // 把已添加的截图列表拼成一张（1 张直接用），拼好立刻显示在框里
   function restitchPending(){
@@ -1308,6 +1341,44 @@ try{
   });
   $("pickBtn").addEventListener("click", function(){ $("fShot").click(); });
   $("fShot").addEventListener("change", function(){ pickFiles(this.files); });
+  /* ---- 拖拽加截图 ----
+     整页都 preventDefault：不然把图拖到页面上会变成“浏览器打开这张图”，把艺账顶掉 */
+  var dropMask = $("dropMask");
+  var dragDepth = 0;
+  function dragHasFiles(e){
+    var dt = e.dataTransfer;
+    return !!(dt && dt.types && Array.prototype.indexOf.call(dt.types, "Files") >= 0);
+  }
+  function closeDropMask(){ dragDepth = 0; dropMask.classList.remove("on"); }
+  document.addEventListener("dragover", function(e){ e.preventDefault(); });
+  document.addEventListener("dragenter", function(e){
+    e.preventDefault();
+    if(!dragHasFiles(e)) return;      // 拖的是文字/链接就不打扰
+    dragDepth++;
+    dropMask.classList.add("on");
+  });
+  document.addEventListener("dragleave", function(){
+    dragDepth = Math.max(0, dragDepth - 1);
+    if(dragDepth === 0) dropMask.classList.remove("on");
+  });
+  document.addEventListener("drop", function(e){
+    e.preventDefault();
+    closeDropMask();
+    var fs = e.dataTransfer && e.dataTransfer.files;
+    if(fs && fs.length) pickFiles(fs);
+  });
+  /* ---- Ctrl+V 粘贴加截图：走剪贴板，格式固定是 image/png，比拖拽稳 ---- */
+  document.addEventListener("paste", function(e){
+    var items = (e.clipboardData && e.clipboardData.items) || [];
+    var fs = [];
+    for(var i = 0; i < items.length; i++){
+      if(items[i].kind === "file" && items[i].type.indexOf("image/") === 0){
+        var f = items[i].getAsFile();
+        if(f) fs.push(f);
+      }
+    }
+    if(fs.length){ e.preventDefault(); pickFiles(fs); }
+  });
   $("clearShot").addEventListener("click", function(){
     pendingShot = null; pendingShotsList = []; $("fShot").value = ""; updateShotUI();
   });
