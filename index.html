@@ -154,6 +154,29 @@
   .thumb-mini{height:48px;border-radius:10px;border:1px solid var(--line);display:block}
   .shot-row .clear-shot{border:none;background:none;color:var(--ink-2);cursor:pointer;font-size:12px;text-decoration:underline}
   .shot-row .clear-shot:hover{color:var(--danger)}
+  /* ---- 截图素材条：一张缩略图＝一张原图。点一下切换是否参与拼接，拖动调左右顺序，× 删掉 ---- */
+  .shot-strip{display:none;align-items:center;gap:10px;margin:10px 0 2px}
+  .shot-strip.on{display:flex}
+  .strip-items{display:flex;align-items:center;gap:9px;overflow-x:auto;padding:7px 2px;flex:1;min-width:0}
+  .shot-item{position:relative;flex:0 0 auto;cursor:pointer;line-height:0}
+  .shot-item img{height:48px;border-radius:10px;border:1.5px solid var(--line);opacity:.38;transition:opacity .15s,border-color .15s,transform .15s}
+  .shot-item.on img{opacity:1;border-color:var(--accent);background:var(--card)}
+  .shot-item.on:hover img{transform:translateY(-2px)}
+  .shot-item.over img{outline:2px dashed var(--accent);outline-offset:2px}
+  .shot-item:not(.on) .idx{display:none}
+  .shot-item .idx{
+    position:absolute;left:-5px;top:-5px;min-width:15px;height:15px;padding:0 3px;border-radius:8px;
+    background:var(--accent);color:var(--on-accent);font-size:10px;font-weight:700;
+    line-height:15px;text-align:center;font-style:normal;box-sizing:border-box;
+  }
+  .shot-item .kill{
+    position:absolute;right:-6px;top:-6px;width:16px;height:16px;border-radius:50%;
+    background:var(--ink-2);color:var(--bg);font-size:12px;font-weight:700;
+    line-height:15px;text-align:center;font-style:normal;display:none;box-shadow:0 1px 3px rgba(0,0,0,.2);
+  }
+  .shot-item:hover .kill{display:block}
+  .shot-item .kill:hover{background:var(--danger)}
+  .shot-strip .thumb-mini{cursor:zoom-in;flex:0 0 auto}
   /* ---- 拖拽加截图：松手前先把落点画出来，免得拖歪 ---- */
   #dropMask{
     display:none;position:fixed;inset:0;z-index:60;padding:24px;
@@ -236,6 +259,47 @@
     align-items:center;justify-content:center;z-index:50;cursor:zoom-out;padding:20px;
   }
   #lightbox img{max-width:100%;max-height:100%;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.4)}
+  /* ---- 拼长图：先选范围、再选格式、看着满意才导出 ---- */
+  #collageSheet{
+    display:none;position:fixed;inset:0;z-index:65;background:rgba(15,20,30,.5);
+    padding:20px;overflow:auto;align-items:flex-start;justify-content:center;
+  }
+  #collageSheet.on{display:flex}
+  .sheet-box{
+    background:var(--card);border-radius:16px;box-shadow:var(--shadow);width:100%;max-width:560px;
+    display:flex;flex-direction:column;max-height:calc(100vh - 40px);
+  }
+  .sheet-head{display:flex;align-items:center;justify-content:space-between;padding:15px 18px 8px}
+  .sheet-head h3{font-size:15px;font-weight:600;color:var(--ink);margin:0}
+  .sheet-x{border:none;background:none;color:var(--ink-2);font-size:20px;line-height:1;cursor:pointer;padding:0 4px}
+  .sheet-x:hover{color:var(--ink)}
+  .sheet-body{padding:0 18px;overflow:auto;flex:1;min-height:0}
+  .opt-line{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:8px 0}
+  .og{display:flex;align-items:center;gap:6px}
+  .og .lbl{font-size:12px;color:var(--hint)}
+  .og button{
+    border:1px solid transparent;background:var(--line-soft);border-radius:999px;
+    padding:3px 11px;font-size:12px;color:var(--ink-2);cursor:pointer;
+    transition:background .15s,color .15s;
+  }
+  .og button:hover{color:var(--ink)}
+  .og button.on{background:var(--accent);color:var(--on-accent)}
+  .ck-list{border:1px solid var(--line);border-radius:12px;overflow:auto;max-height:200px;margin:6px 0}
+  .ck-group{padding:7px 10px 5px;border-bottom:1px solid var(--line-soft)}
+  .ck-group:last-child{border-bottom:none}
+  .ck-head{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ink);cursor:pointer;font-weight:500}
+  .ck-head .cnt{font-size:11px;color:var(--hint);font-weight:400}
+  .ck-item{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-2);padding:3px 0 3px 19px;cursor:pointer}
+  .ck-item:hover{color:var(--ink)}
+  .ck-box{width:13px;height:13px;border:1.5px solid var(--pick-border);border-radius:4px;flex:0 0 auto;position:relative;box-sizing:border-box}
+  .ck-box.on{background:var(--accent);border-color:var(--accent)}
+  .ck-box.on::after{content:"";position:absolute;left:3px;top:0.5px;width:4px;height:7px;border:1.5px solid var(--on-accent);border-top:0;border-left:0;transform:rotate(45deg)}
+  .pv-wrap{margin:8px 0 14px;border:1px solid var(--line);border-radius:12px;background:var(--input-bg);padding:8px;overflow:auto;max-height:250px}
+  .pv-wrap canvas{width:100%;height:auto;display:block;border-radius:6px}
+  .pv-empty{font-size:12px;color:var(--hint);text-align:center;padding:22px 0}
+  .sheet-foot{display:flex;gap:8px;justify-content:flex-end;padding:12px 18px 15px;border-top:1px solid var(--line-soft)}
+  .sheet-foot button{border-radius:10px;padding:8px 18px;font-size:13px;cursor:pointer;border:1px solid var(--line);background:var(--input-bg);color:var(--ink)}
+  .sheet-foot button.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
   footer{text-align:center;color:var(--footer);font-size:12px;margin-top:32px;line-height:1.8}
   /* ---- 主题切换小圆钮：低调，半透明，悬停才亮起来 ---- */
   #themeBtn{
@@ -316,11 +380,14 @@ try{
     <div class="shot-row">
       <label class="pick" id="pickBtn">＋ 添加截图</label>
       <input type="file" id="fShot" accept="image/*" multiple>
-      <img id="shotPreview" class="thumb-mini" style="display:none" alt="截图预览">
-      <button id="clearShot" class="clear-shot" style="display:none">移除截图</button>
+      <button id="clearShot" class="clear-shot" style="display:none">清空</button>
+    </div>
+    <div class="shot-strip" id="shotStrip">
+      <span class="strip-items" id="stripItems"></span>
+      <img id="shotPreview" class="thumb-mini" style="display:none" title="拼图结果，点一下看大图" alt="拼图结果">
     </div>
     <button class="save-btn" id="saveBtn">记一笔</button>
-    <div class="hint">名字可留空：品类空 → 未分类，物资空 → 自动起名。截图可点按钮选、从微信拖进来、或按 Ctrl+V 粘贴，多张自动拼一张。品类用 / 分级，如「餐饮/水果」。</div>
+    <div class="hint">名字可留空：品类空 → 未分类，物资空 → 自动起名。截图可点按钮选、从微信拖进来、或按 Ctrl+V 粘贴；多张可挑着拼（点缩略图切换、拖动调顺序）。品类用 / 分级，如「餐饮/水果」。</div>
   </section>
 
   <!-- 明细列表 -->
@@ -330,6 +397,24 @@ try{
 </div>
 
 <div id="dropMask"><div class="drop-inner">松手，加到截图里<small>可以多张，会自动拼成一张</small></div></div>
+
+<div id="collageSheet">
+  <div class="sheet-box">
+    <div class="sheet-head">
+      <h3>拼长图</h3>
+      <button class="sheet-x" id="collageClose" title="关闭">×</button>
+    </div>
+    <div class="sheet-body">
+      <div class="opt-line" id="optRow"></div>
+      <div class="ck-list" id="ckList"></div>
+      <div class="pv-wrap" id="pvWrap"></div>
+    </div>
+    <div class="sheet-foot">
+      <button id="collageCancel">取消</button>
+      <button class="primary" id="collageSave">存入文件夹</button>
+    </div>
+  </div>
+</div>
 
 <div id="lightbox"><img id="lightboxImg" alt=""></div>
 
@@ -405,7 +490,7 @@ try{
   var entries = [];                 // 全部账目（内存缓存）
   var range = {from:null, to:null}; // 当前时间段（null = 不限）
   var pendingShot = null;           // 待保存的截图 dataURL（多张时已是拼好的那张）
-  var pendingShotsList = [];        // 本次已添加的各张截图（每次添加后重新拼）
+  var pendingShotsList = [];        // 本次已添加的各张截图：[{url, on}]，on = 是否参与拼接
   /* 树形分类的折叠记忆：收起过的分支路径记在这里，刷新后还原 */
   var collapsedSet = {};
   try{
@@ -568,9 +653,10 @@ try{
     txPut(entry).then(function(){
       entries.push(entry);
       pendingShot = null;
-      pendingShotsList = [];
+      // 只清掉「参与过这次拼接」的图；没勾选的留着，接着拼下一笔
+      pendingShotsList = pendingShotsList.filter(function(s){ return !s.on; });
       $("fShot").value = "";
-      updateShotUI();
+      restitchPending();          // 剩下的重新拼（若已无剩图，成品区自动收起）
       $("fItem").value = "";
       $("fAmt").value = "";
       $("fItem").focus();
@@ -593,11 +679,11 @@ try{
       r.readAsDataURL(file);
     });
   }
-  // 多张截图横向拼成一张（左右排列）：统一高度（取各图最小自然高，上限 1600），白缝分隔
+  // 多张截图横向拼成一张（左右排列）：统一高度（取各图最小自然高，上限 3200 保清晰），白缝分隔
   function stitchShots(dataUrls){
     return Promise.all(dataUrls.map(loadImg)).then(function(ims){
       var GAP = 8;
-      var H = Math.min.apply(null, ims.map(function(im){ return im.naturalHeight; }).concat([1600]));
+      var H = Math.min.apply(null, ims.map(function(im){ return im.naturalHeight; }).concat([3200]));
       H = Math.max(1, Math.round(H));
       var scaled = ims.map(function(im){
         var w = Math.max(1, Math.round(im.naturalWidth * H / im.naturalHeight));
@@ -611,7 +697,8 @@ try{
       ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, W, H);
       var x = 0;
       scaled.forEach(function(s2){ ctx.drawImage(s2.im, x, 0, s2.w, H); x += s2.w + GAP; });
-      return c.toDataURL("image/jpeg", 0.82);
+      // 截图 = 大片纯色 + 小字，JPEG 会压出毛边；PNG 无损，这类图体积也不算大
+      return c.toDataURL("image/png");
     });
   }
   // 扩展名和系统给的类型都不可信（微信拖出来的可能是加密 .dat），再看一眼文件头字节
@@ -638,7 +725,8 @@ try{
         var good = list.filter(Boolean);
         if(good.length === 0) throw new Error("不是图片文件，请改用 Ctrl+V 粘贴");
         return Promise.all(good.map(readFileAsDataURL)).then(function(urls){
-          pendingShotsList = pendingShotsList.concat(urls);   // 增量追加
+          // 新加进来的一律默认参与拼接（on 可被用户在素材条上关掉）
+          pendingShotsList = pendingShotsList.concat(urls.map(function(u){ return { url: u, on: true }; }));
           return restitchPending();
         });
       }).catch(function(err){
@@ -646,15 +734,23 @@ try{
         setTimeout(updateShotUI, 2600);
       });
   }
-  // 把已添加的截图列表拼成一张（1 张直接用），拼好立刻显示在框里
+  // 取出「已勾选参与拼接」的那些图
+  function pickedUrls(){
+    return pendingShotsList.filter(function(s){ return s.on; }).map(function(s){ return s.url; });
+  }
+  // 把勾选中的截图拼成一张（1 张直接用），拼好立刻显示在成品位
+  var stitchSeq = 0;      // 连点/连续拖动时会并发拼接，用序号保证只有最后一次的结果算数
   function restitchPending(){
-    var job = pendingShotsList.length === 1
-      ? Promise.resolve(pendingShotsList[0])
-      : stitchShots(pendingShotsList);
+    var urls = pickedUrls();
+    var my = ++stitchSeq;
+    if(urls.length === 0){ pendingShot = null; updateShotUI(); return Promise.resolve(); }
+    var job = urls.length === 1 ? Promise.resolve(urls[0]) : stitchShots(urls);
     return job.then(function(stitched){
+      if(my !== stitchSeq) return;          // 期间选择又变了，这次结果作废
       pendingShot = stitched;
       updateShotUI();
     }).catch(function(err){
+      if(my !== stitchSeq) return;
       pendingShot = null; updateShotUI();
       $("pickBtn").textContent = (err && err.message) ? err.message : "拼接失败，请减少张数重试";
       setTimeout(updateShotUI, 3000);
@@ -662,12 +758,23 @@ try{
   }
   function updateShotUI(){
     var n = pendingShotsList.length;
+    var m = pendingShotsList.filter(function(s){ return s.on; }).length;
+    $("shotStrip").classList.toggle("on", n > 0);
+    $("clearShot").style.display = n > 0 ? "inline" : "none";
+    $("pickBtn").classList.toggle("has", n > 0);
+    $("pickBtn").textContent = n === 0 ? "＋ 添加截图"
+      : (m === n ? "已加 " + n + " 张" : "已选 " + m + " / " + n + " 张");
+    // 素材条：一张缩略图＝一张原图，选中态带拼接序号（序号就是左右顺序）
+    var k = 0;
+    $("stripItems").innerHTML = pendingShotsList.map(function(s, i){
+      return '<span class="shot-item' + (s.on ? ' on' : '') + '" data-i="' + i + '" draggable="true" title="' +
+        (s.on ? '点一下＝不参与拼接' : '点一下＝加入拼接') + ' · 按住可拖到别处调顺序">' +
+        '<img src="' + s.url + '" alt="">' +
+        (s.on ? '<i class="idx">' + (++k) + '</i>' : '') +
+        '<b class="kill" title="删除这张">×</b></span>';
+    }).join("");
     var has = !!pendingShot;
     $("shotPreview").style.display = has ? "block" : "none";
-    $("clearShot").style.display = has ? "inline" : "none";
-    $("pickBtn").classList.toggle("has", has);
-    $("pickBtn").textContent = n === 0 ? "＋ 添加截图"
-      : (n > 1 ? "已拼 " + n + " 张 ✓" : "已加 1 张 ✓");
     if(has) $("shotPreview").src = pendingShot;
   }
 
@@ -950,11 +1057,12 @@ try{
   }
 
   // Excel 嵌入用：把截图（含拼好的长图）适配进「格子显示盒」。
-  // 数据分辨率是显示尺寸的 2 倍（放大看清楚），w/h 返回的是格子里的显示像素。
+  // 显示尺寸（w/h，格子里的像素）保持不变，数据分辨率提到 4 倍：WPS 里放大图片、
+  // 或高分屏上看时字明显更清楚；质量 0.92 也减掉一部分 JPEG 文字毛边。
   function makeCellShot(dataUrl){
     return loadImg(dataUrl).then(function(im){
       var w = im.naturalWidth, h = im.naturalHeight;
-      var BOX_W = 220, BOX_H = 600;      // 数据分辨率上限（= 显示 110×300 的 2 倍，配窄列宽）
+      var BOX_W = 440, BOX_H = 1200;     // 数据分辨率上限（= 显示 110×300 的 4 倍）
       var k = Math.min(BOX_W / w, BOX_H / h, 1);
       var tw = Math.max(1, Math.round(w * k));
       var th = Math.max(1, Math.round(h * k));
@@ -964,9 +1072,9 @@ try{
       ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, tw, th);
       ctx.drawImage(im, 0, 0, tw, th);
       return {
-        dataUrl: c.toDataURL("image/jpeg", 0.78),
-        w: Math.max(1, Math.round(tw / 2)),
-        h: Math.max(1, Math.round(th / 2))
+        dataUrl: c.toDataURL("image/jpeg", 0.92),
+        w: Math.max(1, Math.round(tw / 4)),
+        h: Math.max(1, Math.round(th / 4))
       };
     });
   }
@@ -1274,7 +1382,131 @@ try{
     });
   }
 
-  function stitchCollage(){
+  /* ================= 拼长图：先选范围 + 选格式 + 预览，满意再导 =================
+     老写法点一下就把「当前时段全部带图的账」按写死的单列 720 宽拼掉再直接写文件，
+     范围 / 格式 / 出口三件事全由代码决定。现在三件事都交回给人。 */
+  var CL_OPTS = [
+    { key:"cols",  label:"列数", vals:[{v:1,n:"1 列"},{v:2,n:"2 列"},{v:3,n:"3 列"}] },
+    { key:"label", label:"标签", vals:[{v:true,n:"显示"},{v:false,n:"不显示"}] },
+    { key:"sort",  label:"排序", vals:[{v:"time",n:"按时间"},{v:"cat",n:"按品类"}] },
+    { key:"width", label:"宽度", vals:[{v:720,n:"720"},{v:1080,n:"1080 更清楚"}] }
+  ];
+  var clState = null;              // {all:[{e,im,on}], opts:{cols,label,sort,width}}
+
+  // 排版：把 items 按 opts 画成一张长图，返回 canvas（只画不导，导出前先给人看）
+  function renderCollage(items, opts){
+    var W = opts.width, PAD = 14, GAP = 10, cols = opts.cols;
+    var LABEL_H = opts.label ? 34 : 0;
+    var LH = LABEL_H ? LABEL_H - 6 : 0;
+    var cw = Math.floor((W - PAD * 2 - GAP * (cols - 1)) / cols);
+    var rows = [];
+    for(var i = 0; i < items.length; i += cols) rows.push(items.slice(i, i + cols));
+    var meta = rows.map(function(row){
+      var hs = row.map(function(it){
+        return Math.max(1, Math.round(it.im.naturalHeight * cw / it.im.naturalWidth));
+      });
+      return { hs: hs, h: LABEL_H + Math.max.apply(null, hs) };   // 同一行取最高的一张，行内顶部对齐
+    });
+    var H = PAD * 2 + meta.reduce(function(s, r){ return s + r.h; }, 0) + GAP * (rows.length - 1);
+    if(H > 30000) throw new Error("图太多，长图超过画布上限，请减几笔或改用多列");
+
+    var c = document.createElement("canvas");
+    c.width = W; c.height = H;
+    var ctx = c.getContext("2d");
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, W, H);
+    ctx.textBaseline = "middle";
+    var y = PAD;
+    rows.forEach(function(row, ri){
+      row.forEach(function(it, ci){
+        var x = PAD + ci * (cw + GAP);
+        if(opts.label){
+          ctx.fillStyle = "#e8f0fe";
+          ctx.fillRect(x, y, cw, LH);
+          ctx.fillStyle = "#1e293b";
+          ctx.font = (cw < 300 ? "600 11px " : "600 13px ") + "'Microsoft YaHei', sans-serif";
+          var amt = "￥" + money(it.e.amount);
+          var amtW = ctx.measureText(amt).width;
+          var full = it.e.category + " · " + it.e.item + " · " + fmtDateCN(it.e.date);
+          var txt = full, maxW = cw - amtW - 22;
+          while(txt.length > 4 && ctx.measureText(txt).width > maxW) txt = txt.slice(0, -1);
+          if(txt !== full) txt += "…";        // 列窄时截断品类/物资，金额永远完整
+          ctx.textAlign = "left";  ctx.fillText(txt, x + 9, y + LH / 2);
+          ctx.textAlign = "right"; ctx.fillText(amt, x + cw - 9, y + LH / 2);
+        }
+        ctx.drawImage(it.im, x, y + LABEL_H, cw, meta[ri].hs[ci]);
+      });
+      y += meta[ri].h + GAP;
+    });
+    return c;
+  }
+  // 排序：按品类时同一品类聚在一起，组内仍按时间；按时间时沿用 listInRangeAsc 的正序
+  function collageOrder(list, by){
+    var arr = list.slice();
+    if(by === "cat"){
+      arr.sort(function(a, b){
+        if(a.e.category !== b.e.category) return a.e.category < b.e.category ? -1 : 1;
+        if(a.e.date !== b.e.date) return a.e.date > b.e.date ? 1 : -1;
+        return a.e.createdAt - b.e.createdAt;
+      });
+    }
+    return arr;
+  }
+  function clPicked(){ return clState.all.filter(function(it){ return it.on; }); }
+  function clTop(e){ return (e.category || "未分类").split("/")[0] || "未分类"; }
+
+  function renderClOpts(){
+    $("optRow").innerHTML = CL_OPTS.map(function(g){
+      return '<span class="og"><span class="lbl">' + g.label + '</span>' + g.vals.map(function(o){
+        return '<button data-k="' + g.key + '" data-v="' + o.v + '" class="' +
+          (clState.opts[g.key] === o.v ? "on" : "") + '">' + o.n + '</button>';
+      }).join("") + '</span>';
+    }).join("");
+  }
+  // 勾选清单：按「一级品类」分组，组头点一下 = 整组勾上 / 去掉
+  function renderClList(){
+    var groups = [], gi = {};
+    clState.all.forEach(function(it, i){
+      var top = clTop(it.e);
+      if(!gi[top]){ gi[top] = []; groups.push(top); }
+      gi[top].push(i);
+    });
+    $("ckList").innerHTML = groups.map(function(top){
+      var idxs = gi[top];
+      var on = idxs.filter(function(i){ return clState.all[i].on; }).length;
+      return '<div class="ck-group">' +
+        '<div class="ck-head" data-top="' + esc(top) + '">' +
+          '<span class="ck-box' + (on ? " on" : "") + '"></span>' + esc(top) +
+          '<span class="cnt">' + on + "/" + idxs.length + '</span></div>' +
+        idxs.map(function(i){
+          var it = clState.all[i];
+          return '<div class="ck-item" data-i="' + i + '">' +
+            '<span class="ck-box' + (it.on ? " on" : "") + '"></span>' +
+            esc(it.e.item || "未命名") + " · " + fmtDateCN(it.e.date) + " · ￥" + money(it.e.amount) +
+            '</div>';
+        }).join("") +
+      '</div>';
+    }).join("");
+  }
+  function redrawCollage(){
+    var picked = collageOrder(clPicked(), clState.opts.sort);
+    if(picked.length === 0){
+      $("pvWrap").innerHTML = '<div class="pv-empty">一笔都没选，至少选一笔才会生成拼图</div>';
+      return;
+    }
+    try{
+      var c = renderCollage(picked, clState.opts);
+      $("pvWrap").innerHTML = "";
+      $("pvWrap").appendChild(c);      // 直接塞 canvas（CSS 缩放显示），不转图片，省一次拷贝
+    }catch(err){
+      $("pvWrap").innerHTML = '<div class="pv-empty">' + esc(err.message) + '</div>';
+    }
+  }
+  function closeCollage(){
+    $("collageSheet").classList.remove("on");
+    $("pvWrap").innerHTML = "";        // 顺手丢掉 canvas，释放内存
+    clState = null;
+  }
+  function openCollage(){
     var btn = $("collageBtn");
     var list = listInRangeAsc().filter(function(e){ return !!e.shot; });
     if(list.length === 0){
@@ -1282,51 +1514,42 @@ try{
       setTimeout(function(){ btn.disabled = false; btn.textContent = "🧩 拼长图"; }, 1800);
       return;
     }
-    btn.disabled = true; btn.textContent = "正在拼接…";
-    var W = 720, PAD = 14, LABEL_H = 36, GAP = 10;
-    Promise.all(list.map(function(e){ return loadImg(e.shot).then(function(im){ return {e: e, im: im}; }); }))
-    .then(function(items){
-      var scaled = items.map(function(it){
-        var w = W - PAD * 2;
-        var h = Math.max(1, Math.round(it.im.naturalHeight * w / it.im.naturalWidth));
-        return { e: it.e, im: it.im, h: h };
-      });
-      var H = PAD + scaled.reduce(function(s, x){ return s + LABEL_H + x.h + GAP; }, 0) - GAP + PAD;
-      if(H > 30000){   // 浏览器画布有最大高度限制，超出就让用户缩小时间段
-        throw new Error("截图太多，长图超过画布上限，请缩小时间段分批拼");
-      }
-      var c = document.createElement("canvas");
-      c.width = W; c.height = H;
-      var ctx = c.getContext("2d");
-      ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, W, H);
-      var y = PAD;
-      scaled.forEach(function(x){
-        var lh = LABEL_H - 6;
-        ctx.fillStyle = "#e8f0fe";
-        ctx.fillRect(PAD, y, W - PAD * 2, lh);
-        ctx.fillStyle = "#1e293b";
-        ctx.font = "600 14px 'Microsoft YaHei', sans-serif";
-        ctx.textBaseline = "middle";
-        ctx.textAlign = "left";
-        ctx.fillText(x.e.category + " · " + x.e.item + " · " + fmtDateCN(x.e.date), PAD + 10, y + lh / 2);
-        ctx.textAlign = "right";
-        ctx.fillText("￥" + money(x.e.amount), W - PAD - 10, y + lh / 2);
-        ctx.textAlign = "left";
-        y += LABEL_H;
-        ctx.drawImage(x.im, PAD, y, W - PAD * 2, x.h);
-        y += x.h + GAP;
-      });
-      var fname = rangeFname("艺账拼图", ".png");
-      deliver(fname, dataUrlToU8(c.toDataURL("image/png")), "image/png").then(function(msg){
-        btn.disabled = false;
-        btn.textContent = msg;
-        setTimeout(function(){ btn.textContent = "🧩 拼长图"; }, 2600);
-      });
-    }).catch(function(err){
-      btn.disabled = false;
-      btn.textContent = err && err.message ? err.message : "拼接失败，稍后再试";
-      setTimeout(function(){ btn.textContent = "🧩 拼长图"; }, 3000);
+    btn.disabled = true; btn.textContent = "正在准备…";
+    // 打开时只读一次图，之后改选项、勾选都复用，不重复解码
+    Promise.all(list.map(function(e){
+      return loadImg(e.shot).then(function(im){ return { e: e, im: im, on: true }; });
+    })).then(function(items){
+      clState = { all: items, opts: { cols: 1, label: true, sort: "time", width: 720 } };
+      $("collageSheet").classList.add("on");
+      renderClOpts(); renderClList(); redrawCollage();
+      btn.disabled = false; btn.textContent = "🧩 拼长图";
+    }).catch(function(){
+      btn.disabled = false; btn.textContent = "读取截图失败，稍后再试";
+      setTimeout(function(){ btn.textContent = "🧩 拼长图"; }, 2600);
     });
+  }
+  function saveCollage(){
+    if(!clState) return;
+    var picked = collageOrder(clPicked(), clState.opts.sort);
+    if(picked.length === 0) return;
+    var btn = $("collageSave");
+    btn.disabled = true; btn.textContent = "正在生成…";
+    setTimeout(function(){            // 先让按钮文字画出来，再开算
+      var c;
+      try{ c = renderCollage(picked, clState.opts); }
+      catch(err){
+        btn.disabled = false; btn.textContent = "存入文件夹";
+        $("pvWrap").innerHTML = '<div class="pv-empty">' + esc(err.message) + '</div>';
+        return;
+      }
+      deliver(rangeFname("艺账拼图", ".png"), dataUrlToU8(c.toDataURL("image/png")), "image/png").then(function(msg){
+        btn.disabled = false; btn.textContent = "存入文件夹";
+        closeCollage();
+        var cb = $("collageBtn");
+        cb.textContent = msg;
+        setTimeout(function(){ cb.textContent = "🧩 拼长图"; }, 3200);
+      });
+    }, 30);
   }
 
   /* ================= 事件 ================= */
@@ -1382,12 +1605,85 @@ try{
   $("clearShot").addEventListener("click", function(){
     pendingShot = null; pendingShotsList = []; $("fShot").value = ""; updateShotUI();
   });
+  /* ---- 素材条：点一下切换参与拼接 / × 单张删除 / 拖动调左右顺序 ----
+     顺序有意义：拼接是从左往右排的，所以缩略图的先后＝成品里的左右 */
+  var strip = $("stripItems");
+  var dragFrom = -1;
+  strip.addEventListener("click", function(e){
+    var item = e.target.closest(".shot-item");
+    if(!item) return;
+    var i = +item.dataset.i;
+    if(e.target.closest(".kill")) pendingShotsList.splice(i, 1);        // 删掉这一张
+    else pendingShotsList[i].on = !pendingShotsList[i].on;             // 切换是否参与拼接
+    if(pendingShotsList.length === 0){ pendingShot = null; updateShotUI(); return; }
+    restitchPending();
+  });
+  strip.addEventListener("dragstart", function(e){
+    var item = e.target.closest(".shot-item");
+    if(!item) return;
+    dragFrom = +item.dataset.i;
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", String(dragFrom));   // 不设数据，部分浏览器不认这次拖拽
+  });
+  strip.addEventListener("dragover", function(e){
+    if(dragFrom < 0) return;              // 拖的是文件（不是素材），交给整页那套逻辑
+    e.preventDefault();
+    var item = e.target.closest(".shot-item");
+    [].forEach.call(strip.children, function(c){ c.classList.remove("over"); });
+    if(item) item.classList.add("over");
+  });
+  strip.addEventListener("drop", function(e){
+    if(dragFrom < 0) return;
+    e.preventDefault(); e.stopPropagation();   // 别让「拖文件进来」的整页逻辑接走
+    var item = e.target.closest(".shot-item");
+    var to = item ? +item.dataset.i : pendingShotsList.length - 1;
+    var moved = pendingShotsList.splice(dragFrom, 1)[0];
+    pendingShotsList.splice(to, 0, moved);
+    dragFrom = -1;
+    restitchPending();                    // 顺序变了，重拼
+  });
+  strip.addEventListener("dragend", function(){
+    dragFrom = -1;
+    [].forEach.call(strip.children, function(c){ c.classList.remove("over"); });
+  });
+  $("shotPreview").addEventListener("click", function(){
+    if(!pendingShot) return;
+    $("lightboxImg").src = pendingShot;
+    $("lightbox").style.display = "flex";
+  });
   $("saveBtn").addEventListener("click", saveCurrent);
   $("fAmt").addEventListener("keydown", function(e){ if(e.key === "Enter") saveCurrent(); });
   $("fItem").addEventListener("keydown", function(e){ if(e.key === "Enter") saveCurrent(); });
   $("exportBtn").addEventListener("click", exportExcel);
   $("exportXBtn").addEventListener("click", exportExcelX);
-  $("collageBtn").addEventListener("click", stitchCollage);
+  $("collageBtn").addEventListener("click", openCollage);
+  /* ---- 拼长图面板：勾选 / 选项 / 预览 / 导出 ---- */
+  $("collageClose").addEventListener("click", closeCollage);
+  $("collageCancel").addEventListener("click", closeCollage);
+  $("collageSave").addEventListener("click", saveCollage);
+  $("collageSheet").addEventListener("click", function(e){ if(e.target === this) closeCollage(); });
+  $("optRow").addEventListener("click", function(e){
+    var b = e.target.closest("button");
+    if(!b || !clState) return;
+    var raw = b.dataset.v;
+    clState.opts[b.dataset.k] = raw === "true" ? true
+      : (raw === "false" ? false : (/^\d+$/.test(raw) ? +raw : raw));
+    renderClOpts(); redrawCollage();
+  });
+  $("ckList").addEventListener("click", function(e){
+    if(!clState) return;
+    var head = e.target.closest(".ck-head");
+    var item = e.target.closest(".ck-item");
+    if(head){
+      var top = head.dataset.top, idxs = [];
+      clState.all.forEach(function(it, i){ if(clTop(it.e) === top) idxs.push(i); });
+      var allOn = idxs.every(function(i){ return clState.all[i].on; });
+      idxs.forEach(function(i){ clState.all[i].on = !allOn; });
+    } else if(item){
+      clState.all[+item.dataset.i].on = !clState.all[+item.dataset.i].on;
+    } else return;
+    renderClList(); redrawCollage();
+  });
   $("folderBtn").addEventListener("click", pickExportFolder);
   $("restoreBtn").addEventListener("click", restoreFromBackup);
 
