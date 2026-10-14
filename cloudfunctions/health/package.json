@@ -1,0 +1,9 @@
+{
+  "name": "health",
+  "version": "1.0.0",
+  "description": "艺账健康检查云函数（Day 15）——只返回一段 JSON，用于验证云函数已部署且公网可访问",
+  "main": "index.js",
+  "dependencies": {},
+  "author": "Joye",
+  "license": "MIT"
+}
