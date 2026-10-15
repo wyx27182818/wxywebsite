@@ -1,0 +1,35 @@
+{
+  "envId": "e27182818wxy-d1gadlaz7c3b34f5a",
+  "functionRoot": "./cloudfunctions",
+  "functions": [
+    {
+      "name": "yizhang-api",
+      "type": "HTTP",
+      "dir": "./cloudfunctions/api",
+      "runtime": "Nodejs20.19",
+      "timeout": 15,
+      "memorySize": 256,
+      "installDependency": false,
+      "ignore": ["*.md", ".git"],
+      "gatewayPath": "/api",
+      "envVariables": {
+        "PGHOST": "在这里填控制台显示的数据库地址",
+        "PGPORT": "5432",
+        "PGDATABASE": "postgres-ko5pvt42",
+        "PGUSER": "在这里填控制台显示的数据库账号",
+        "PGPASSWORD": "在这里填控制台显示的数据库密码",
+        "PGSSL": "false"
+      }
+    },
+    {
+      "name": "http-nodejs-helloworld-evdn",
+      "type": "HTTP",
+      "dir": "./cloudfunctions/health",
+      "runtime": "Nodejs20.19",
+      "timeout": 15,
+      "memorySize": 256,
+      "installDependency": false,
+      "ignore": ["*.md", ".git"]
+    }
+  ]
+}

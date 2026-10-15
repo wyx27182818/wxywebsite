@@ -1,6 +1,12 @@
 # 本地环境配置（以后存数据库密码等敏感信息），绝不上传
 .env
 
+# 云函数部署配置：里面有数据库密码，所以只留一份示例在仓库里（cloudbaserc.example.json）
+cloudbaserc.json
+
+# 一次性数据库诊断函数（里面有密码，测完就删，永不上传）
+cloudfunctions/pgtest/
+
 # 依赖目录（以后装了 Node 依赖会生成）
 node_modules/
 

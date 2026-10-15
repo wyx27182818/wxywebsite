@@ -1,0 +1,10 @@
+{
+  "name": "yizhang-api",
+  "version": "0.3.0",
+  "description": "艺账后端接口（HTTP 云函数）：GET /api/health、/api/categories、/api/entries",
+  "main": "index.js",
+  "private": true,
+  "dependencies": {
+    "@cloudbase/node-sdk": "^3.18.3"
+  }
+}

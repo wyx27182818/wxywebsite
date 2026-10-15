@@ -1,0 +1,4 @@
+#!/bin/bash
+# CloudBase HTTP 函数的启动脚本：容器起来后执行它，把我们的 Node 服务拉起来。
+# 没有这个文件，平台不知道该怎么启动这个函数（普通事件函数才用 exports.main）。
+exec node index.js
