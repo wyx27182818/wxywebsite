@@ -440,6 +440,49 @@ tcb db execute --sql "SELECT COUNT(*) FROM entries" -e e27182818wxy-d1gadlaz7c3b
     也就是说，**前端页面现在还不能直接调这些接口**（浏览器会拦），这是后面要配的东西。今天清单也明确不做跨域。
 11. **浏览器直接打开接口会变成下载**：网关会把响应的 `Content-Disposition` 统一改写成 `attachment`（函数里设 `inline` 也会被覆盖，已实测）。
     想在页面上看 JSON，用 curl，或开开发者工具的 Network 面板。
+12. **代码分层（2026-10-15 定案）**：云函数按四层组织，依赖方向是单行道。详见 §4.10。
+
+### 4.10 后端代码分层（2026-10-15 重构后）
+
+`cloudfunctions/yizhang-api/` 目录结构：
+
+```
+yizhang-api/
+├── index.js                     入口，17 行，只有 require("./app")
+├── app.js                       HTTP 层：路由分派 / 响应 / 兜错
+├── services/
+│   └── yizhangService.js        业务层：校验规则与业务判断
+├── repositories/
+│   ├── entriesRepository.js     entries 表的全部查询
+│   └── categoriesRepository.js  categories 表的全部查询
+└── db/
+    └── client.js                数据访问层：连接与鉴权
+```
+
+**每层只管一件事**：
+
+| 层 | 文件 | 只负责 | 不负责 |
+|----|------|--------|--------|
+| 入口 | `index.js` | 启动 | 任何逻辑 |
+| HTTP 层 | `app.js` | 接请求、分路由、返响应、兜错 | 业务判断、SQL |
+| 业务层 | `services/yizhangService.js` | 参数校验、业务规则（防重复等） | HTTP 细节、SQL |
+| 仓库层 | `repositories/*.js` | 全部数据库查询，**一张表一个文件** | 业务判断、HTTP |
+| 数据访问层 | `db/client.js` | 数据库连接与鉴权、结果解包 | 任何业务逻辑 |
+
+**两条硬规则**：
+
+1. **依赖方向单行道**：`index → app → service → repository → client`。上层可以调下层，**下层绝不回头调上层**。
+2. **各自唯一出口**：`db/client.js` 是唯一碰数据库连接的地方；`repositories/` 是唯一写查询的地方。`app.js` 里不该出现任何 `.from(...)` 或 SQL 片段。
+
+**加一个新接口要改哪三个文件**（以「删除一笔」为例）：
+
+1. `app.js` —— 路由表加一条，把 `DELETE /api/entries/:id` 分派给 service；
+2. `services/yizhangService.js` —— 加 `deleteEntry(id)`，做参数校验与业务判断；
+3. `repositories/entriesRepository.js` —— 加 `remove(id)`，写这条 SQL。
+
+**为什么这么拆**：换数据库只动 `client.js` 和 repositories；加接口三处各补一小块，互不干扰。重构前是单文件 498 行，所有事混在一起。
+
+**现状**：2026-10-15 完成重构，**未新增任何功能**，四个接口行为与响应形状完全不变（已逐个回归验证，见 §7）。
 
 ---
 
@@ -518,3 +561,4 @@ tcb db execute --sql "DELETE FROM entries WHERE item='测试-麻辣烫' AND spen
 | 2026-10-14 | Day 16 修订：数据库引擎由「MySQL 型」改为环境**自带的 PostgreSQL 17**（免开通、零额外费用），脚本改 PostgreSQL 方言，表设计不变 |
 | 2026-10-14 | Day 17：新增云函数 `yizhang-api`，实现 `GET /api/categories`、`GET /api/entries` 两个读取接口（均实测 HTTP 200）；**统一返回改为 `{ ok, data, error }` 三段式**（§4.3 已改）；新增错误码表；更正「函数内可以靠路径区分路由」（路径透传已开启）；补充跨域现状（仍不可直连）与 `Content-Disposition` 被网关改写两条实测结论 |
 | 2026-10-15 | Day 18：实现 `POST /api/entries` 写入接口（新增 §2.4），**实测三种情况全过**——正常写入 200 / 重复 409 `DUPLICATE` / 缺字段 400 `INVALID_BODY`，并回归验证新写入的数据可被 `GET /api/entries` 读出；错误码表补 3 条（`INVALID_BODY`、`CATEGORY_NOT_FOUND`、`DUPLICATE`）；**§4.9 认证方式定案**——云函数访库改用服务端凭证 `api_key`（环境变量 `CLOUDBASE_APIKEY`），根治 Web 云函数退化成 `anon` 角色导致的 42501 写入拒绝；§2.1 health 响应新增 `data.auth` 字段（版本升 `v0.5`）；**§1 新增路由指向说明**（`/api/*` → `yizhang-api`，`/e27182818wxy` → 模板函数，排查时勿混淆）；§5 补写入接口的完整验证命令 |
+| 2026-10-15 | Day 18：**后端分层重构**（新增 §4.10）——云函数 `yizhang-api` 从单文件（`index.js` 498 行）拆为四层：`index.js`（入口）/ `app.js`（HTTP 层）/ `services/yizhangService.js`（业务层）/ `repositories/*.js`（仓库层，一张表一个文件）/ `db/client.js`（数据访问层）。**只搬代码、未新增任何功能**；四个接口（3 个 GET + 1 个 POST 的三种情况）已逐个回归，响应形状与状态码与重构前完全一致，三表数据量复核 8/6/6。§4 通用约定新增第 12 条指向本节 |
