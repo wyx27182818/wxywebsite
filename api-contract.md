@@ -1,6 +1,6 @@
 # 艺账 · 接口契约（api-contract.md）
 
-> Day 15 产物 · 最后更新：2026-10-14（Day 17 更新）
+> Day 15 产物 · 最后更新：2026-10-15（Day 18 更新）
 >
 > 这份文档是**前端和后端之间的约定书**：前端照它写请求，后端照它写返回。
 > 以后每加一个接口，就在这里加一节——两边的写法才不会各走各的。
@@ -15,10 +15,19 @@
 | **后端接口**（云函数网关） | `https://e27182818wxy-d1gadlaz7c3b34f5a-1503948716.ap-shanghai.app.tcloudbase.com` | 所有接口都挂在它后面；业务接口统一走 `/api/*` |
 | 云开发环境 ID | `e27182818wxy-d1gadlaz7c3b34f5a` | 区域 ap-shanghai |
 | 数据库（PostgreSQL） | 库名 `postgres-ko5pvt42`，schema `public` | 见 §3，用 CLI 或控制台执行 SQL |
-| 承载**业务接口**的云函数 | `yizhang-api` | Day 17 新建。一个函数处理多个路径：`/api/health`、`/api/categories`、`/api/entries` |
+| 承载**业务接口**的云函数 | `yizhang-api` | Day 17 新建。一个函数处理多个路径：`/api/health`、`/api/categories`、`/api/entries`（GET + POST） |
 | 承载**旧健康检查**的云函数 | `http-nodejs-helloworld-evdn` | Day 15 用模板建的，现在只挂着 `/e27182818wxy` 一个路径 |
 
 ⚠️ 两个域名不是一回事：`tcloudbaseapp.com` 是**前端页面**，`ap-shanghai.app.tcloudbase.com` 是**后端接口**。别互相填错。
+
+⚠️ **同一域名下，路径不同、指向的函数也不同**（2026-10-15 踩坑，务必记牢）：
+
+| 路径 | 指向的函数 | 说明 |
+|------|-----------|------|
+| `/api/*` | `yizhang-api` | **业务接口全在这里** |
+| `/e27182818wxy` | `http-nodejs-helloworld-evdn` | Day 15 的模板函数，只返回 `version: v0.1` 的平铺 JSON |
+
+排查时如果打到 `/e27182818wxy`，会拿到模板函数的老响应（`v0.1`、没有 `dbMode`/`auth` 字段），很容易误判成「新代码没生效」。**认准 `/api` 前缀。** 用 `tcb routes list` 可查当前路由指向。
 
 ---
 
@@ -26,11 +35,20 @@
 
 > **统一形状**：业务接口都在网关的 `/api` 前缀下，全部由同一个云函数 `yizhang-api` 处理；
 > 响应一律是 `{ ok, data, error }` 三段式（详见 §4.3）。
-> 云函数内部怎么按路径分派，见 §2.5。
+> 云函数内部怎么按路径分派，见 §2.6。
+>
+> **当前 4 个接口**（截至 Day 18）：
+
+| 接口 | 方法 | 作用 | 状态 |
+|------|------|------|------|
+| `/api/health` | GET | 后端存活检查（含鉴权状态） | ✅ |
+| `/api/categories` | GET | 读分类树 | ✅ |
+| `/api/entries` | GET | 读账目列表（支持日期区间） | ✅ |
+| `/api/entries` | POST | 新增一笔账 | ✅ |
 
 ### 2.1 健康检查 `GET /api/health`
 
-- **状态**：✅ 已实现（2026-10-14 实测 HTTP 200）
+- **状态**：✅ 已实现（2026-10-15 实测 HTTP 200，版本 `v0.5`）
 - **完整地址**：`https://e27182818wxy-d1gadlaz7c3b34f5a-1503948716.ap-shanghai.app.tcloudbase.com/api/health`
 - **方法**：GET
 - **认证**：无
@@ -44,13 +62,14 @@
   "ok": true,
   "data": {
     "service": "yizhang-api",
-    "version": "v0.3",
+    "version": "v0.5",
     "env": "e27182818wxy-d1gadlaz7c3b34f5a",
-    "time": "2026-10-14T15:03:35.510Z",
-    "timeCN": "2026/10/14 23:03:35",
+    "time": "2026-10-15T11:00:32.195Z",
+    "timeCN": "2026/10/15 19:00:32",
     "method": "GET",
     "path": "/api/health",
-    "dbMode": "cloudbase-rdb/public"
+    "dbMode": "cloudbase-rdb/public",
+    "auth": "api_key"
   },
   "error": null
 }
@@ -60,13 +79,14 @@
 |------|------|------|
 | `ok` | boolean | 恒为 `true`，表示这次调用成功 |
 | `data.service` | string | 服务名，固定 `yizhang-api` |
-| `data.version` | string | 接口版本，当前 `v0.3` |
+| `data.version` | string | 接口版本，当前 `v0.5` |
 | `data.env` | string | 云开发环境 ID，用来确认响应确实来自我们的环境 |
 | `data.time` | string | 服务器时间，ISO 8601（UTC） |
 | `data.timeCN` | string | 同一时间的北京时间可读格式 |
 | `data.method` | string | 本次请求用的方法 |
 | `data.path` | string | 网关透传进来的原始路径 |
 | `data.dbMode` | string | 数据来源说明，当前 `cloudbase-rdb/public`（不查库，仅标示用） |
+| `data.auth` | string | 鉴权状态：配好凭证时是 `api_key`；没配则是 `anon(未配 CLOUDBASE_APIKEY)`。**只报状态，不回显密钥** |
 
 ---
 
@@ -177,32 +197,105 @@
 
 ---
 
-### 2.4 错误码一览
+### 2.4 新增一笔账 `POST /api/entries`
+
+- **状态**：✅ 已实现（2026-10-15 实测 HTTP 200 / 409 / 400 三种情况全过）
+- **完整地址**：`https://e27182818wxy-d1gadlaz7c3b34f5a-1503948716.ap-shanghai.app.tcloudbase.com/api/entries`
+- **方法**：POST
+- **认证**：无（前端侧）；云函数访库靠服务端凭证 `api_key`，见 §4.9
+- **请求头**：`Content-Type: application/json`
+- **请求体大小上限**：64 KB（超了返回 400 `INVALID_BODY`）
+
+**请求体字段**
+
+| 字段 | 必填 | 类型 | 说明 |
+|------|------|------|------|
+| `date` | ✅ | string | 花销日期，格式 `YYYY-MM-DD`，**必须是真实存在的日期**（`2026-02-31` 会被拦下） |
+| `item` | ✅ | string | 买了什么，最长 100 字 |
+| `amount` | ✅ | number | 金额（元），≥ 0，最多两位小数（会自动四舍五入到两位） |
+| `category` | ❌ | string | 分类完整路径（如 `餐饮/水果`）。**留空 = 未分类**；填了就必须能在 `categories` 里查到 |
+
+**请求示例**
+
+```bash
+curl -X POST ".../api/entries" \
+  -H "Content-Type: application/json" \
+  -d '{"date":"2026-10-15","category":"餐饮","item":"麻辣烫","amount":26.8}'
+```
+
+**成功响应**（HTTP 200）
+
+```json
+{
+  "ok": true,
+  "data": {
+    "id": 10,
+    "category": "餐饮",
+    "date": "2026-10-15",
+    "item": "麻辣烫",
+    "amount": 26.8,
+    "shots": []
+  },
+  "error": null
+}
+```
+
+> **返回形状和 `GET /api/entries` 的单条完全一致**——前端可以用同一套渲染逻辑，不用为"新增返回"另写一份。
+> 新记录还没截图，所以 `shots` 固定是 `[]`。
+
+**三种失败情况**
+
+| 情况 | HTTP | `error.code` | 响应示例 |
+|------|------|--------------|----------|
+| 缺必填 / 格式不对 | 400 | `INVALID_BODY` | `"参数有问题——缺 date（花销日期，格式 YYYY-MM-DD，比如 2026-09-20）；缺 amount（金额，单位元，比如 26.8）"` |
+| 分类在库里不存在 | 400 | `CATEGORY_NOT_FOUND` | `"分类 \"餐饮/水果\" 在库里不存在——先 GET /api/categories 看有哪些分类"` |
+| 同一天同分类同物资已记过 | 409 | `DUPLICATE` | `"这一天（2026-10-15）已经记过「麻辣烫」（分类：餐饮）了，不重复记。如果确实是另一笔，把 item 写得更具体些（比如「苹果（下午）」）再提交"` |
+
+**三条实现约定**（做校验时的取舍，写下来免得以后忘）
+
+1. **一次报全部问题**：必填和格式一次性查完再返回，不是"报一个、改一个、再报下一个"。
+2. **防重复的判据是「三件齐同」**：`date` + `category` + `item` 三个都一样才算重复。
+   - `category` 留空时按「`category_id IS NULL`」比对，不是拿空字符串去比。
+   - 判重范围是**全库**（不限当天录入的那一批）。
+   - 想记同一天同分类的第二笔同类开销，把 `item` 写具体些区分开即可。
+3. **分类留空存 NULL**，不存空字符串——和读取接口把 NULL 显示成 `未分类` 保持一致。
+
+---
+
+### 2.5 错误码一览
 
 | HTTP | `error.code` | 什么时候出现 |
 |------|--------------|--------------|
-| 400 | `INVALID_PARAM` | 日期格式不对等参数问题 |
+| 400 | `INVALID_PARAM` | 查询参数问题（如日期格式不对） |
+| 400 | `INVALID_BODY` | 写入的请求体有问题：缺必填字段、格式不对、请求体不是合法 JSON、超过 64KB |
+| 400 | `CATEGORY_NOT_FOUND` | 写入时指定的分类在 `categories` 里查不到 |
+| 409 | `DUPLICATE` | 写入的这笔（同日期 + 同分类 + 同物资）已经存在 |
 | 404 | `NOT_FOUND` | 路径不存在（函数收到了，但没有这个接口） |
-| 405 | `METHOD_NOT_ALLOWED` | 用了 GET 以外的方法 |
+| 405 | `METHOD_NOT_ALLOWED` | 用了接口不支持的方法 |
 | 502 | `DB_QUERY_FAILED` | 数据库查询本身出错 |
 | 503 | `DB_NOT_AVAILABLE` | 拿不到数据库身份（本地跑、或环境变量缺失） |
 | 500 | `INTERNAL_ERROR` | 其他没预料到的错误 |
 
+> **400 和 409 的分界**：400 是"你这次请求本身写得不对"，改请求就能过；409 是"请求没写错，但跟库里已有的撞了"，需要改内容或换个说法。
+
 ---
 
-### 2.5 云函数内部怎么区分路径（重要）
+### 2.6 云函数内部怎么区分路径（重要）
 
 网关那条 `/api` 路由**开着了「路径透传」**，所以函数内 `req.url` 拿到的是**完整路径**（如 `/api/entries?limit=5`）。
 函数内部把路径归一化后再分派：`/api/entries` 和 `/entries` 都会命中同一个处理逻辑——这样将来路由前缀怎么调都不影响代码。
 
 > 📌 这条是对 Day 15 那份旧契约的**更正**：当时写的是"不能靠函数内部 path 区分路由"，那是在没开路径透传的情况下；
-> 现在开了，一个函数处理多个接口成为可能（当前 3 个接口共用一个函数）。
+> 现在开了，一个函数处理多个接口成为可能（当前 4 个接口共用一个函数）。
+>
+> **路径归一化的规则**：`/api` → `/`；`/api/xxx` → `/xxx`；末尾斜杠会被去掉；查询串不参与判断。
+> 所以 `/api/entries`、`/entries`、`/api/entries?limit=5` 都会走同一个分支。
 
 ---
 
-### 2.6 历史遗留：`GET /e27182818wxy`
+### 2.7 历史遗留：`GET /e27182818wxy`
 
-Day 15 建的第一个健康检查，走的是另一个云函数（`http-nodejs-helloworld-evdn`），响应是**平铺**的、不是三段式：
+Day 15 建的第一个健康检查，走的是**另一个云函数**（`http-nodejs-helloworld-evdn`），响应是**平铺**的、不是三段式：
 
 ```json
 {
@@ -218,6 +311,10 @@ Day 15 建的第一个健康检查，走的是另一个云函数（`http-nodejs-
 ```
 
 保留它只为向后兼容，**新代码一律用 `/api/health`**。
+
+> ⚠️ **2026-10-15 实测踩坑**：这两个路径在**同一个域名**下，但指向**不同的云函数**。
+> 排查时误把 `/e27182818wxy` 当业务接口打，拿到的是这里的 `v0.1` 平铺响应（没有 `dbMode`、没有 `auth`），
+> 一度误判成"新部署的代码没生效"。**认准 `/api` 前缀**；路由现状用 `tcb routes list` 查。
 
 ---
 
@@ -322,13 +419,23 @@ tcb db execute --sql "SELECT COUNT(*) FROM entries" -e e27182818wxy-d1gadlaz7c3b
 3. **返回结构（统一三段式）**：
    - 成功 → `{"ok": true, "data": <数据>, "error": null}`，HTTP 200
    - 失败 → `{"ok": false, "data": null, "error": {"code": "错误码", "message": "人话解释"}}`，HTTP 为对应状态码
-   - 错误码见 §2.4；`error` 里可能还有可选的 `detail` 字段带更细的原始信息
+   - 错误码见 §2.5；`error` 里可能还有可选的 `detail` 字段带更细的原始信息
 4. **时间**：同时给两个字段——`time` 用 ISO 8601，`timeCN` 用北京时间可读串。
 5. **金额单位**：**元，两位小数**（数据库用 `NUMERIC(10,2)`）——Day 16 已定案。
 6. **版本号**：`version` 字段，出现不兼容改动时递增。
 7. **参数校验**：脏参数在函数里先拦下（如日期格式），返回 400，不丢给数据库去报错。
 8. **SQL 注入防护**：查询条件全部走 SDK 的构建器方法（`.gte()` / `.lte()` / `.range()`），等价于参数化查询，不做字符串拼接。
-9. **认证方式**：**未定**（后续几天决定，可能用 CloudBase 的匿名/自定义登录）。
+9. **认证方式（2026-10-15 定案）**：
+   - **前端 → 接口**：目前**无认证**（谁都能调）。等以后加用户体系再补。
+   - **云函数 → 数据库**：用**服务端管理员凭证 `api_key`**，存在云函数环境变量 `CLOUDBASE_APIKEY` 里。
+     凭证本身**不进代码、不进仓库**（`cloudbaserc.json` 已被 `.gitignore` 排除）。
+   - **为什么需要它**：CloudBase 的 **Web（HTTP）云函数不注入登录身份**（官方设计，只有事件函数才注入）。
+     不配的话 SDK 会退化成匿名（`anon`）角色，而 `anon` 对业务表**只有 SELECT 权限**——
+     表现就是"读得到、写不了"，报 `permission denied for table entries`（错误码 42501）。
+   - **别用临时密钥**：不要从环境变量读 `TENCENTCLOUD_SECRETID/SECRETKEY` 固化进 `init` 配置——
+     SCF 里那是会过期的临时密钥，固化后长驻实例会突然失效。
+   - **验证方法**：`GET /api/health` 的 `data.auth` 字段会告诉你当前是 `api_key` 还是 `anon`。
+   - **管理入口**：`tcb env apikey create <名字> --type api_key -e <envId>`，或控制台「环境 → API Key 配置」。
 10. **跨域（重要，还没做）**：控制台里那条路由的"跨域"开关显示**已开启**，但实测响应头里**没有** `Access-Control-Allow-Origin`，`OPTIONS` 预检返回 405。
     也就是说，**前端页面现在还不能直接调这些接口**（浏览器会拦），这是后面要配的东西。今天清单也明确不做跨域。
 11. **浏览器直接打开接口会变成下载**：网关会把响应的 `Content-Disposition` 统一改写成 `attachment`（函数里设 `inline` 也会被覆盖，已实测）。
@@ -341,14 +448,16 @@ tcb db execute --sql "SELECT COUNT(*) FROM entries" -e e27182818wxy-d1gadlaz7c3b
 命令行（Windows 的 Git Bash / PowerShell 都行）：
 
 ```bash
-# 健康检查
-curl -i "https://e27182818wxy-d1gadlaz7c3b34f5a-1503948716.ap-shanghai.app.tcloudbase.com/api/health"
+BASE="https://e27182818wxy-d1gadlaz7c3b34f5a-1503948716.ap-shanghai.app.tcloudbase.com/api"
+
+# 健康检查（看 auth 是不是 api_key）
+curl "$BASE/health"
 
 # 分类列表
-curl "https://e27182818wxy-d1gadlaz7c3b34f5a-1503948716.ap-shanghai.app.tcloudbase.com/api/categories"
+curl "$BASE/categories"
 
 # 账目列表（只取 9/12–9/15）
-curl "https://e27182818wxy-d1gadlaz7c3b34f5a-1503948716.ap-shanghai.app.tcloudbase.com/api/entries?from=2026-09-12&to=2026-09-15"
+curl "$BASE/entries?from=2026-09-12&to=2026-09-15"
 ```
 
 期望：`HTTP/1.1 200` + `content-type: application/json` + `ok: true` 的 JSON。
@@ -357,7 +466,29 @@ curl "https://e27182818wxy-d1gadlaz7c3b34f5a-1503948716.ap-shanghai.app.tcloudba
 
 ```bash
 tcb db execute --sql "UPDATE entries SET item='香蕉（改过）' WHERE id=8" -e e27182818wxy-d1gadlaz7c3b34f5a
-curl ".../api/entries?limit=1"     # 立刻能看到 item 变成「香蕉（改过）」
+curl "$BASE/entries?limit=1"     # 立刻能看到 item 变成「香蕉（改过）」
+```
+
+**验证写入接口**（三条一起跑，覆盖正常 / 重复 / 缺字段）：
+
+```bash
+# ① 正常写入 → 200，返回新记录的 id
+curl -X POST "$BASE/entries" -H "Content-Type: application/json" \
+  -d '{"date":"2026-10-15","category":"餐饮","item":"测试-麻辣烫","amount":26.8}'
+
+# ② 原样再发一次 → 409 DUPLICATE
+curl -X POST "$BASE/entries" -H "Content-Type: application/json" \
+  -d '{"date":"2026-10-15","category":"餐饮","item":"测试-麻辣烫","amount":26.8}'
+
+# ③ 只给 item → 400 INVALID_BODY，一次报出缺 date 和缺 amount
+curl -X POST "$BASE/entries" -H "Content-Type: application/json" \
+  -d '{"item":"只有名字"}'
+
+# ④ 回归：确认刚写的能读出来
+curl "$BASE/entries?from=2026-10-15&to=2026-10-15"
+
+# ⑤ 测试完把这条测试数据删掉，保持库干净
+tcb db execute --sql "DELETE FROM entries WHERE item='测试-麻辣烫' AND spent_on=DATE '2026-10-15'" -e e27182818wxy-d1gadlaz7c3b34f5a
 ```
 
 ---
@@ -369,7 +500,8 @@ curl ".../api/entries?limit=1"     # 立刻能看到 item 变成「香蕉（改�
 | 数据库表设计（categories / entries / shots） | 数据落到云上 | ✅ 已完成（Day 16） |
 | `GET /api/categories` | 读分类树 | ✅ 已完成（Day 17） |
 | `GET /api/entries` | 拉取账目列表 | ✅ 已完成（Day 17） |
-| `POST /api/entries` | 新增一笔账 | 未开始 |
+| `POST /api/entries` | 新增一笔账 | ✅ 已完成（Day 18） |
+| 服务端凭证 `api_key` | 让云函数有写库权限 | ✅ 已完成（Day 18） |
 | `PUT /api/entries/:id` | 修改一笔 | 未开始 |
 | `DELETE /api/entries/:id` | 删除一笔 | 未开始 |
 | 跨域配置 | 让前端页面能直连接口 | 未开始 |
@@ -384,4 +516,5 @@ curl ".../api/entries?limit=1"     # 立刻能看到 item 变成「香蕉（改�
 | 2026-10-14 | 首版：环境开通、健康检查接口上线（HTTP 200 实测通过）、前端页面静态托管上线，两端地址确定 |
 | 2026-10-14 | Day 16：补充「数据模型」一节（categories / entries / shots 三张表）；金额单位定案为「元，NUMERIC(10,2)」；新增 `database/schema.sql`、`database/seed.sql`，**已在云库实际执行并验证** |
 | 2026-10-14 | Day 16 修订：数据库引擎由「MySQL 型」改为环境**自带的 PostgreSQL 17**（免开通、零额外费用），脚本改 PostgreSQL 方言，表设计不变 |
-| 2026-10-14 | Day 17：新增云函数 `yizhang-api`，实现 `GET /api/categories`、`GET /api/entries` 两个读取接口（均实测 HTTP 200）；**统一返回改为 `{ ok, data, error }` 三段式**（§4.3 已改）；新增 §2.4 错误码表；更正 §2.5「函数内可以靠路径区分路由」（路径透传已开启）；补充跨域现状（仍不可直连）与 `Content-Disposition` 被网关改写两条实测结论 |
+| 2026-10-14 | Day 17：新增云函数 `yizhang-api`，实现 `GET /api/categories`、`GET /api/entries` 两个读取接口（均实测 HTTP 200）；**统一返回改为 `{ ok, data, error }` 三段式**（§4.3 已改）；新增错误码表；更正「函数内可以靠路径区分路由」（路径透传已开启）；补充跨域现状（仍不可直连）与 `Content-Disposition` 被网关改写两条实测结论 |
+| 2026-10-15 | Day 18：实现 `POST /api/entries` 写入接口（新增 §2.4），**实测三种情况全过**——正常写入 200 / 重复 409 `DUPLICATE` / 缺字段 400 `INVALID_BODY`，并回归验证新写入的数据可被 `GET /api/entries` 读出；错误码表补 3 条（`INVALID_BODY`、`CATEGORY_NOT_FOUND`、`DUPLICATE`）；**§4.9 认证方式定案**——云函数访库改用服务端凭证 `api_key`（环境变量 `CLOUDBASE_APIKEY`），根治 Web 云函数退化成 `anon` 角色导致的 42501 写入拒绝；§2.1 health 响应新增 `data.auth` 字段（版本升 `v0.5`）；**§1 新增路由指向说明**（`/api/*` → `yizhang-api`，`/e27182818wxy` → 模板函数，排查时勿混淆）；§5 补写入接口的完整验证命令 |
